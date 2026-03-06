@@ -1,0 +1,21 @@
+{
+  "name": "@intmax402/cli",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "bin": {
+    "intmax402": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@intmax402/core": "workspace:*",
+    "@intmax402/client": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

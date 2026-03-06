@@ -1,0 +1,19 @@
+{
+  "name": "intmax402",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HTTP 402 payment gate for AI agents using INTMAX ZK L2",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
