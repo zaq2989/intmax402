@@ -8,9 +8,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@intmax402/core": "workspace:*",
-    "@intmax402/express": "workspace:*",
-    "@intmax402/client": "workspace:*",
+    "@tanakayuto/intmax402-core": "workspace:*",
+    "@tanakayuto/intmax402-express": "workspace:*",
+    "@tanakayuto/intmax402-client": "workspace:*",
     "express": "^4.18.0"
   },
   "devDependencies": {

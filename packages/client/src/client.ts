@@ -1,5 +1,5 @@
-import { createHash, createHmac, sign } from "crypto";
-import { parseWWWAuthenticate, INTMAX402Challenge } from "@tanakayuto/intmax402-core";
+import { ethers } from "ethers";
+import { parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
 
 const RPC_URLS = {
   mainnet: "https://api.rpc.intmax.io?network=ethereum",
@@ -12,51 +12,40 @@ export interface INTMAX402ClientOptions {
 }
 
 export class INTMAX402Client {
-  private privateKey: string;
+  private wallet: ethers.Wallet;
   private environment: "mainnet" | "testnet";
-  private address: string;
   private initialized: boolean = false;
 
   constructor(options: INTMAX402ClientOptions) {
-    this.privateKey = options.privateKey;
+    this.wallet = new ethers.Wallet(options.privateKey);
     this.environment = options.environment || "testnet";
-    this.address = this.deriveAddress(options.privateKey);
-  }
-
-  private deriveAddress(privateKey: string): string {
-    // Derive a deterministic address from private key using hash
-    // In production, use secp256k1 to derive the actual Ethereum address
-    const hash = createHash("sha256").update(privateKey).digest("hex");
-    return "0x" + hash.slice(0, 40);
   }
 
   async init(): Promise<void> {
-    // In production, this would call IntMaxNodeClient.login()
-    // which takes ~7 seconds for initial setup
+    // In production: IntMaxNodeClient.login() (~7s one-time)
     this.initialized = true;
   }
 
   getAddress(): string {
-    return this.address;
+    return this.wallet.address;
   }
 
   getRpcUrl(): string {
     return RPC_URLS[this.environment];
   }
 
+  /**
+   * Sign a nonce using Ethereum personal_sign (compatible with ethers.verifyMessage).
+   */
   async sign(nonce: string): Promise<string> {
-    // Sign the nonce using the private key
-    // In production, use secp256k1 to create an Ethereum personal_sign signature
-    // For now, create an HMAC-based signature as placeholder
-    const message = `\x19Ethereum Signed Message:\n${nonce.length}${nonce}`;
-    const sig = createHmac("sha256", this.privateKey).update(message).digest("hex");
-    // Pad to 65 bytes (130 hex chars) to match Ethereum signature format
-    const padded = sig.padEnd(130, "0");
-    return "0x" + padded;
+    return await this.wallet.signMessage(nonce);
   }
 
+  /**
+   * Fetch a resource, automatically handling 401/402 INTMAX402 challenges.
+   * Flow: GET → 401/402 + nonce → sign → GET + Authorization → 200
+   */
   async fetch(url: string, options?: RequestInit): Promise<Response> {
-    // First request - expect 401/402
     const initialResponse = await globalThis.fetch(url, options);
 
     if (initialResponse.status !== 401 && initialResponse.status !== 402) {
@@ -64,33 +53,24 @@ export class INTMAX402Client {
     }
 
     const wwwAuth = initialResponse.headers.get("www-authenticate");
-    if (!wwwAuth) {
-      return initialResponse;
-    }
+    if (!wwwAuth) return initialResponse;
 
     const challenge = parseWWWAuthenticate(wwwAuth);
-    if (!challenge) {
-      return initialResponse;
-    }
+    if (!challenge) return initialResponse;
 
     // Sign the nonce
     const signature = await this.sign(challenge.nonce);
 
     // Build authorization header
-    let authHeader = `INTMAX402 address="${this.address}", nonce="${challenge.nonce}", signature="${signature}"`;
-
-    // If payment mode, would need to send payment first and include txHash
-    // For now, just include the signature
+    const authHeader = `INTMAX402 address="${this.wallet.address}", nonce="${challenge.nonce}", signature="${signature}"`;
 
     // Retry with credentials
-    const retryOptions = {
+    return globalThis.fetch(url, {
       ...options,
       headers: {
         ...((options?.headers as Record<string, string>) || {}),
         Authorization: authHeader,
       },
-    };
-
-    return globalThis.fetch(url, retryOptions);
+    });
   }
 }

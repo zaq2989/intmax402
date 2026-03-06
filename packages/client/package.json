@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,11 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanakayuto/intmax402-core": "0.1.0"
+    "@tanakayuto/intmax402-core": "0.1.2",
+    "ethers": "^6.0.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "ethers": "^6.0.0"
   },
   "files": [
     "dist",

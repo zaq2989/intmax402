@@ -1,6 +1,6 @@
 import express from "express";
-import { intmax402 } from "@intmax402/express";
-import { INTMAX402Client } from "@intmax402/client";
+import { intmax402 } from "@tanakayuto/intmax402-express";
+import { INTMAX402Client } from "@tanakayuto/intmax402-client";
 
 const SECRET = "agent-demo-secret";
 const PORT = 3761;

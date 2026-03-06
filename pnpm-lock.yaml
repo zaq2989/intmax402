@@ -10,13 +10,13 @@ importers:
 
   examples/agent-to-agent:
     dependencies:
-      '@intmax402/client':
+      '@tanakayuto/intmax402-client':
         specifier: workspace:*
         version: link:../../packages/client
-      '@intmax402/core':
+      '@tanakayuto/intmax402-core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intmax402/express':
+      '@tanakayuto/intmax402-express':
         specifier: workspace:*
         version: link:../../packages/express
       express:
@@ -35,10 +35,10 @@ importers:
 
   examples/basic-express:
     dependencies:
-      '@intmax402/core':
+      '@tanakayuto/intmax402-core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@intmax402/express':
+      '@tanakayuto/intmax402-express':
         specifier: workspace:*
         version: link:../../packages/express
       express:
@@ -57,12 +57,12 @@ importers:
 
   packages/cli:
     dependencies:
-      '@intmax402/client':
-        specifier: workspace:*
-        version: link:../client
-      '@intmax402/core':
-        specifier: workspace:*
-        version: link:../core
+      '@tanakayuto/intmax402-client':
+        specifier: 0.1.0
+        version: 0.1.0
+      '@tanakayuto/intmax402-core':
+        specifier: 0.1.0
+        version: 0.1.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -73,9 +73,12 @@ importers:
 
   packages/client:
     dependencies:
-      '@intmax402/core':
-        specifier: workspace:*
-        version: link:../core
+      '@tanakayuto/intmax402-core':
+        specifier: 0.1.0
+        version: 0.1.0
+      ethers:
+        specifier: ^6.0.0
+        version: 6.16.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -95,9 +98,9 @@ importers:
 
   packages/express:
     dependencies:
-      '@intmax402/core':
-        specifier: workspace:*
-        version: link:../core
+      '@tanakayuto/intmax402-core':
+        specifier: 0.1.0
+        version: 0.1.0
       ethers:
         specifier: ^6.16.0
         version: 6.16.0
@@ -126,6 +129,12 @@ packages:
   '@noble/hashes@1.3.2':
     resolution: {integrity: sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==}
     engines: {node: '>= 16'}
+
+  '@tanakayuto/intmax402-client@0.1.0':
+    resolution: {integrity: sha512-Gxe8TkLJ10pQ/m4gsm6DzRGJwt4lG3Fpn0NCwj8pqJBj/a1lch0GymseDn3SQhuKcIwiokWxKEJRA3QjDQZnLw==}
+
+  '@tanakayuto/intmax402-core@0.1.0':
+    resolution: {integrity: sha512-3TABJsecjTn2adnBVgq+bFlY0Rjg1xq/0lkVYx3rlYPiGEqNqsDBH7GXWr6bniWYK61dAK2Q+7G3uMzuf5yQTw==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -472,6 +481,12 @@ snapshots:
       '@noble/hashes': 1.3.2
 
   '@noble/hashes@1.3.2': {}
+
+  '@tanakayuto/intmax402-client@0.1.0':
+    dependencies:
+      '@tanakayuto/intmax402-core': 0.1.0
+
+  '@tanakayuto/intmax402-core@0.1.0': {}
 
   '@types/body-parser@1.19.6':
     dependencies:
