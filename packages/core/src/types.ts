@@ -27,4 +27,6 @@ export interface INTMAX402Config {
   environment?: "mainnet" | "testnet";
   allowList?: string[];
   pricing?: Record<string, string>;
+  /** Bind nonce to client IP. Default false (recommended for AI agents). */
+  bindIp?: boolean;
 }
