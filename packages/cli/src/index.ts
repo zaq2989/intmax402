@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { randomBytes } from "crypto";
-import { parseAuthorization, parseWWWAuthenticate } from "@intmax402/core";
-import { INTMAX402Client } from "@intmax402/client";
+import { parseAuthorization, parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
+import { INTMAX402Client } from "@tanakayuto/intmax402-client";
 
 const [, , command, ...args] = process.argv;
 

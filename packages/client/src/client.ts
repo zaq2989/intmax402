@@ -1,5 +1,5 @@
 import { createHash, createHmac, sign } from "crypto";
-import { parseWWWAuthenticate, INTMAX402Challenge } from "@intmax402/core";
+import { parseWWWAuthenticate, INTMAX402Challenge } from "@tanakayuto/intmax402-core";
 
 const RPC_URLS = {
   mainnet: "https://api.rpc.intmax.io?network=ethereum",
