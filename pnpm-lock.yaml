@@ -168,8 +168,8 @@ importers:
   packages/express:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: 0.2.2
-        version: 0.2.2
+        specifier: workspace:*
+        version: link:../core
       ethers:
         specifier: ^6.16.0
         version: 6.16.0
@@ -193,11 +193,11 @@ importers:
   packages/fetch-adapter:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: 0.2.2
-        version: 0.2.2
+        specifier: workspace:*
+        version: link:../core
       '@tanakayuto/intmax402-express':
-        specifier: 0.2.2
-        version: 0.2.2(express@4.22.1)(typescript@5.9.3)
+        specifier: workspace:*
+        version: link:../express
       ethers:
         specifier: ^6.0.0
         version: 6.16.0
@@ -212,11 +212,11 @@ importers:
   packages/hono:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: 0.2.2
-        version: 0.2.2
-      '@tanakayuto/intmax402-express':
-        specifier: 0.2.2
-        version: 0.2.2(express@4.22.1)(typescript@5.9.3)
+        specifier: workspace:*
+        version: link:../core
+      '@tanakayuto/intmax402-fetch':
+        specifier: workspace:*
+        version: link:../fetch-adapter
       ethers:
         specifier: ^6.0.0
         version: 6.16.0
@@ -279,14 +279,6 @@ packages:
 
   '@tanakayuto/intmax402-core@0.2.0':
     resolution: {integrity: sha512-twA+bW9cYo4mdTeobzG3ytLVXQMhunCavsaGvp0gubsGrk8E92HQzZCys2jIWmJBIig6ORDNLHdI2r6hDAUpqw==}
-
-  '@tanakayuto/intmax402-core@0.2.2':
-    resolution: {integrity: sha512-hrl2DTvWU51ZA+PRg3jzxXS7L+hEiILBBNjhFdXnKIMZhLBI8WqEi3BTynHqQSNQQOjw0+Weyxs2QdpJoU0p8w==}
-
-  '@tanakayuto/intmax402-express@0.2.2':
-    resolution: {integrity: sha512-2dddwDNgan2n0bW0R9OLZhW0p1s63kVGHHX0Sy41/Qs1ZAavYiVLTIQMn/o74wBqtiueGkbwtTK14jq3doyPWw==}
-    peerDependencies:
-      express: ^4.18.0
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -796,21 +788,6 @@ snapshots:
       '@scure/base': 1.2.6
 
   '@tanakayuto/intmax402-core@0.2.0': {}
-
-  '@tanakayuto/intmax402-core@0.2.2': {}
-
-  '@tanakayuto/intmax402-express@0.2.2(express@4.22.1)(typescript@5.9.3)':
-    dependencies:
-      '@tanakayuto/intmax402-core': 0.2.2
-      ethers: 6.16.0
-      express: 4.22.1
-      intmax2-server-sdk: 1.5.2(typescript@5.9.3)
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - typescript
-      - utf-8-validate
-      - zod
 
   '@types/body-parser@1.19.6':
     dependencies:

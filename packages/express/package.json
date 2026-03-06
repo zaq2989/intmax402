@@ -1,15 +1,32 @@
 {
   "name": "@tanakayuto/intmax402-express",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./crypto": {
+      "import": "./dist/crypto.js",
+      "require": "./dist/crypto.js",
+      "types": "./dist/crypto.d.ts"
+    },
+    "./verify-payment": {
+      "import": "./dist/verify-payment.js",
+      "require": "./dist/verify-payment.js",
+      "types": "./dist/verify-payment.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanakayuto/intmax402-core": "0.2.2",
+    "@tanakayuto/intmax402-core": "workspace:*",
     "ethers": "^6.16.0",
     "intmax2-server-sdk": "^1.5.2"
   },
