@@ -93,3 +93,8 @@ export default app
 ## License
 
 MIT
+
+## ⚠️ IP Binding Warning
+When using `bindIp: true`, ensure your server is behind a trusted reverse proxy (Nginx, Cloudflare, etc.).
+Direct exposure allows attackers to forge `X-Forwarded-For` headers, bypassing IP binding.
+Default (`bindIp: false`) is recommended for AI agent use cases.
