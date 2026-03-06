@@ -1,0 +1,28 @@
+{
+  "name": "@tanakayuto/intmax402-hono",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "https://github.com/zaq2989/intmax402" },
+  "keywords": ["intmax", "http-402", "payment", "hono", "cloudflare-workers", "ai-agent"],
+  "license": "MIT",
+  "dependencies": {
+    "@tanakayuto/intmax402-core": "0.2.2",
+    "@tanakayuto/intmax402-express": "0.2.2",
+    "ethers": "^6.0.0"
+  },
+  "peerDependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "hono": "^4.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  }
+}
