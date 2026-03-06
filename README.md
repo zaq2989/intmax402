@@ -14,6 +14,16 @@ A stateless HTTP payment gating protocol powered by [INTMAX](https://intmax.io) 
 | **v0.1.x** | Identity mode (wallet ownership proof) | ✅ **Implemented** |
 | v2.0 | ZK proof mode | 🔜 Planned |
 
+## Try It Now
+
+```bash
+# Test any intmax402-protected endpoint instantly
+npx @tanakayuto/intmax402-cli test https://your-api.com/premium
+
+# Generate a test wallet
+npx @tanakayuto/intmax402-cli keygen
+```
+
 ## Install
 
 ```bash
@@ -22,6 +32,9 @@ npm install @tanakayuto/intmax402-express
 
 # Client (AI agent)
 npm install @tanakayuto/intmax402-client
+
+# CLI (testing / debugging)
+npm install -g @tanakayuto/intmax402-cli
 ```
 
 ## Quick Start
@@ -121,6 +134,32 @@ nonce = HMAC-SHA256(server_secret, url_path + floor(timestamp / 30_000))
 | `identity` | 401 | Premium access, rate limiting by wallet, allowlists |
 | `payment` | 402 | Pay-per-use API, AI agent micropayments |
 
+## CLI
+
+```bash
+# Test an endpoint (identity mode)
+intmax402 test https://api.example.com/premium
+
+# Test payment mode
+intmax402 test https://api.example.com/paid --mode payment
+
+# Generate a test wallet
+intmax402 keygen
+```
+
+```
+$ intmax402 test http://localhost:3000/premium
+
+Testing: http://localhost:3000/premium
+  ① GET /premium → 401
+  ② nonce: a3f8c2... (30s window)
+  ③ Signing with wallet: 0xf39F...
+  ④ GET /premium + Authorization → 200 ✅
+
+Address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Time: 12ms
+```
+
 ## Packages
 
 | Package | Description |
@@ -128,7 +167,7 @@ nonce = HMAC-SHA256(server_secret, url_path + floor(timestamp / 30_000))
 | [`@tanakayuto/intmax402-core`](https://www.npmjs.com/package/@tanakayuto/intmax402-core) | Protocol types, nonce generation, verification |
 | [`@tanakayuto/intmax402-express`](https://www.npmjs.com/package/@tanakayuto/intmax402-express) | Express middleware |
 | [`@tanakayuto/intmax402-client`](https://www.npmjs.com/package/@tanakayuto/intmax402-client) | Client SDK with auto-retry |
-| [`@tanakayuto/intmax402-cli`](https://www.npmjs.com/package/@tanakayuto/intmax402-cli) | CLI testing tool |
+| [`@tanakayuto/intmax402-cli`](https://www.npmjs.com/package/@tanakayuto/intmax402-cli) | CLI — test any endpoint instantly |
 
 ## Why INTMAX?
 
