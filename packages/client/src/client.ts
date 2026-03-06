@@ -20,6 +20,10 @@ export class INTMAX402Client {
   private intmaxClient: IntMaxNodeClient | null = null;
 
   constructor(options: INTMAX402ClientOptions) {
+    // Validate private key before creating wallet
+    if (!ethers.isHexString(options.privateKey, 32)) {
+      throw new Error("Invalid private key: must be a 32-byte hex string (0x-prefixed)");
+    }
     this.wallet = new ethers.Wallet(options.privateKey);
     this.environment = options.environment || "testnet";
   }
