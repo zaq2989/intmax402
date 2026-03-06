@@ -10,6 +10,7 @@ export function parseWWWAuthenticate(header: string): INTMAX402Challenge | null 
     result[match[1]] = match[2];
   }
   if (!result.realm || !result.nonce || !result.mode) return null;
+  if (!["identity", "payment"].includes(result.mode)) return null;
   return {
     realm: result.realm,
     nonce: result.nonce,

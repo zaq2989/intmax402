@@ -1,4 +1,5 @@
 import express from "express";
+import { randomBytes } from "crypto";
 import { intmax402 } from "@tanakayuto/intmax402-express";
 
 const app = express();
@@ -7,7 +8,7 @@ const SECRET = process.env.INTMAX402_SECRET;
 if (!SECRET) {
   console.warn("⚠ INTMAX402_SECRET not set. Using insecure default. Set this in production!");
 }
-const EFFECTIVE_SECRET = SECRET || "dev-secret-do-not-use-in-production-" + Math.random().toString(36);
+const EFFECTIVE_SECRET = SECRET || "dev-" + randomBytes(32).toString("hex");
 
 // Free endpoint - no authentication required
 app.get("/free", (_req, res) => {
