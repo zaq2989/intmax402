@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "main": "dist/index.js",
   "bin": {
     "intmax402": "dist/index.js"

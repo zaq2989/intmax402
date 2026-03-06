@@ -1,9 +1,10 @@
 import express from "express";
+import { ethers } from "ethers";
 import { intmax402 } from "@tanakayuto/intmax402-express";
 import { INTMAX402Client } from "@tanakayuto/intmax402-client";
 
 const SECRET = "agent-demo-secret";
-const PORT = 3761;
+const PORT = 3762;
 
 // Agent B: Server providing an API
 const app = express();
@@ -31,12 +32,13 @@ async function main() {
 
     // Agent A: Client consuming the API
     console.log("Agent A: Initializing client...");
+    const wallet = ethers.Wallet.createRandom();
     const client = new INTMAX402Client({
-      privateKey: "0x" + "ab".repeat(32),
+      privateKey: wallet.privateKey,
       environment: "testnet",
     });
     await client.init();
-    console.log(`Agent A: Address = ${client.getAddress()}`);
+    console.log(`Agent A: Address = ${client.getAddress()} (randomly generated each run)`);
     console.log("");
 
     // Agent A calls Agent B's protected API
