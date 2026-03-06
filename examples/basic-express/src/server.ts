@@ -3,7 +3,11 @@ import { intmax402 } from "@tanakayuto/intmax402-express";
 
 const app = express();
 const PORT = 3760;
-const SECRET = process.env.INTMAX402_SECRET || "dev-secret-change-in-production";
+const SECRET = process.env.INTMAX402_SECRET;
+if (!SECRET) {
+  console.warn("⚠ INTMAX402_SECRET not set. Using insecure default. Set this in production!");
+}
+const EFFECTIVE_SECRET = SECRET || "dev-secret-do-not-use-in-production-" + Math.random().toString(36);
 
 // Free endpoint - no authentication required
 app.get("/free", (_req, res) => {
@@ -15,7 +19,7 @@ app.get(
   "/identity",
   intmax402({
     mode: "identity",
-    secret: SECRET,
+    secret: EFFECTIVE_SECRET,
   }),
   (_req, res) => {
     res.json({
@@ -31,7 +35,7 @@ app.get(
   "/paid",
   intmax402({
     mode: "payment",
-    secret: SECRET,
+    secret: EFFECTIVE_SECRET,
     serverAddress: "0x1234567890abcdef1234567890abcdef12345678",
     amount: "0.001",
     tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",

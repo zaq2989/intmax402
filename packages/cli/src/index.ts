@@ -40,6 +40,18 @@ async function testCommand(url?: string, mode: string = "identity") {
     process.exit(1);
   }
 
+  // Validate URL: only http:// and https:// are allowed (SSRF prevention)
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      console.error(chalk.red("Error: Only http:// and https:// URLs are supported"));
+      process.exit(1);
+    }
+  } catch {
+    console.error(chalk.red(`Error: Invalid URL: ${url}`));
+    process.exit(1);
+  }
+
   console.log(`Testing: ${chalk.cyan(url)}\n`);
 
   const startTime = Date.now();
@@ -91,8 +103,8 @@ async function testCommand(url?: string, mode: string = "identity") {
   if (mode === "payment") {
     // Payment mode: include a mock txHash
     const mockTxHash = "0x" + Buffer.alloc(32).fill(0xab).toString("hex");
-    const message = `${challenge.nonce}:${mockTxHash}`;
-    const signature = await wallet.signMessage(message);
+    // Sign only the nonce (same format as server expects)
+    const signature = await wallet.signMessage(challenge.nonce);
     authHeader = `INTMAX402 address="${address}",nonce="${challenge.nonce}",signature="${signature}",txHash="${mockTxHash}"`;
   } else {
     // Identity mode: sign just the nonce

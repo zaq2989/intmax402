@@ -1,11 +1,17 @@
 import { INTMAX402Client } from "@tanakayuto/intmax402-client";
 
 const SERVER_URL = process.env.SERVER_URL || "http://localhost:3761";
-const CLIENT_PRIVATE_KEY = process.env.CLIENT_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const CLIENT_PRIVATE_KEY = process.env.CLIENT_PRIVATE_KEY;
+if (!CLIENT_PRIVATE_KEY) {
+  console.error("Error: CLIENT_PRIVATE_KEY environment variable is required");
+  console.error("Generate one with: intmax402 keygen");
+  process.exit(1);
+}
+const PRIVATE_KEY = CLIENT_PRIVATE_KEY as string;
 
 async function main() {
   const client = new INTMAX402Client({
-    privateKey: CLIENT_PRIVATE_KEY,
+    privateKey: PRIVATE_KEY,
     environment: "testnet",
   });
 
