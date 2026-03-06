@@ -31,6 +31,14 @@ export function parseAuthorization(header: string): INTMAX402Credential | null {
     result[match[1]] = match[2];
   }
   if (!result.address || !result.nonce || !result.signature) return null;
+
+  // Fix 6: Input length validation to prevent malformed/oversized inputs
+  // address: 42 chars (0x + 40 hex), nonce: 64 chars (sha256 hex), signature: 132 chars (0x + 130 hex)
+  if (result.address.length !== 42) return null;
+  if (result.nonce.length !== 64) return null;
+  if (result.signature.length !== 132) return null;
+  if (result.txHash && result.txHash.length > 128) return null;
+
   return {
     address: result.address,
     nonce: result.nonce,

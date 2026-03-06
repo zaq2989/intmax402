@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const WINDOW_MS = 30_000; // 30 second windows
 
@@ -25,6 +25,7 @@ export function generateNonce(
 
 /**
  * Verify a nonce. Checks current and previous window for clock skew tolerance.
+ * Uses timingSafeEqual to prevent timing attacks.
  */
 export function verifyNonce(
   nonce: string,
@@ -40,7 +41,16 @@ export function verifyNonce(
       ? `${w}:${ip}:${path}`
       : `${w}:${path}`;
     const expected = createHmac("sha256", secret).update(data).digest("hex");
-    if (expected === nonce) return true;
+
+    // Fix 4: Use timingSafeEqual to prevent timing attacks
+    // Both expected and nonce must be valid hex strings of the same length
+    if (
+      expected.length === nonce.length &&
+      /^[0-9a-f]+$/i.test(nonce) &&
+      timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(nonce, "hex"))
+    ) {
+      return true;
+    }
   }
   return false;
 }
