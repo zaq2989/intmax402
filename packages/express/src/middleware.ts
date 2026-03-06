@@ -53,7 +53,8 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
       }
 
       if (config.allowList && config.allowList.length > 0) {
-        if (!config.allowList.includes(credential.address.toLowerCase())) {
+        const normalizedAllowList = config.allowList.map(a => a.toLowerCase())
+        if (!normalizedAllowList.includes(credential.address.toLowerCase())) {
           res.status(403).json({ error: "Address not in allow list" });
           return;
         }

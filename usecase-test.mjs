@@ -51,6 +51,13 @@ app.get('/api/admin-only', intmax402({ mode: 'identity', secret: SECRET, allowLi
   (req, res) => res.json({ secret: 'admin-secret', address: req.intmax402?.address })
 );
 
+// エンドポイント5: allowList大文字正規化テスト（シナリオ8-3用）
+// allowListに大文字アドレスで登録 → 小文字アドレスで認証しても通るべき
+const adminAllowListUpper = ['0xF39FD6E51AAD88F6F4CE6AB8827279CFFFB92266'];
+app.get('/api/admin-upper', intmax402({ mode: 'identity', secret: SECRET, allowList: adminAllowListUpper }),
+  (req, res) => res.json({ secret: 'admin-secret-upper', address: req.intmax402?.address })
+);
+
 const server = app.listen(PORT);
 await new Promise(r => setTimeout(r, 300));
 
@@ -288,6 +295,16 @@ const r8b = await fetch(`http://localhost:${PORT}/api/admin-only`, {
 });
 const d8b = await r8b.json();
 r8b.status === 403 ? ok(`8-2: allowList外アドレス → 403 (${d8b.error})`) : ng(`8-2: allowList外 → ${r8b.status}: ${JSON.stringify(d8b)}`);
+
+// 8-3: allowListに大文字アドレスで登録 → 小文字アドレスで認証しても通る
+// サーバー側: allowList: ["0xF39FD6..."] (大文字) / クライアント側: address = 小文字 → 200
+const r8c = await agent.fetch(`http://localhost:${PORT}/api/admin-upper`);
+const d8c = await r8c.json();
+if (r8c.status === 200) {
+  ok(`8-3: allowList大文字登録 → 小文字アドレスで認証 → 200 (大文字小文字正規化OK)`);
+} else {
+  ng(`8-3: allowList大文字登録 → 小文字アドレスで認証 → ${r8c.status}: ${JSON.stringify(d8c)}`);
+}
 
 // === シナリオ9: アドレス大文字小文字の正規化 ===
 console.log('\n📡 シナリオ9: アドレス大文字小文字の正規化\n');
