@@ -1,123 +1,162 @@
 #!/usr/bin/env node
 
-import { randomBytes } from "crypto";
-import { parseAuthorization, parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
-import { INTMAX402Client } from "@tanakayuto/intmax402-client";
+import minimist from "minimist";
+import chalk from "chalk";
+import { ethers } from "ethers";
+import { parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
 
-const [, , command, ...args] = process.argv;
+const argv = minimist(process.argv.slice(2), {
+  string: ["mode"],
+  boolean: ["help"],
+  alias: { h: "help" },
+  default: { mode: "identity" },
+});
+
+const command = argv._[0];
 
 async function main() {
+  if (argv.help || !command) {
+    printHelp();
+    return;
+  }
+
   switch (command) {
     case "test":
-      await testCommand(args[0]);
+      await testCommand(argv._[1], argv.mode as string);
       break;
     case "keygen":
       keygenCommand();
       break;
-    case "verify":
-      verifyCommand(args[0]);
-      break;
     default:
-      printUsage();
+      console.error(chalk.red(`Unknown command: ${command}`));
+      printHelp();
+      process.exit(1);
   }
 }
 
-async function testCommand(url?: string) {
+async function testCommand(url?: string, mode: string = "identity") {
   if (!url) {
-    console.error("Usage: intmax402 test <url>");
+    console.error(chalk.red("Usage: intmax402 test <url> [--mode identity|payment]"));
     process.exit(1);
   }
 
-  console.log(`Testing INTMAX402 flow against ${url}...\n`);
+  console.log(`Testing: ${chalk.cyan(url)}\n`);
 
-  // Step 1: Initial request
-  console.log("Step 1: Sending initial request...");
-  const response = await fetch(url);
-  console.log(`  Status: ${response.status}`);
+  const startTime = Date.now();
 
-  if (response.status !== 401 && response.status !== 402) {
-    console.log("  No 402 challenge received. Endpoint may not be protected.");
+  // Generate a random wallet for testing
+  const wallet = ethers.Wallet.createRandom();
+  const privateKey = wallet.privateKey;
+  const address = wallet.address;
+
+  // Step 1: Initial GET → expect 401
+  process.stdout.write(`  ${chalk.yellow("①")} GET ${new URL(url).pathname} → `);
+  let res1: Response;
+  try {
+    res1 = await fetch(url);
+  } catch (err: any) {
+    console.log(chalk.red(`error: ${err.message}`));
+    process.exit(1);
+  }
+
+  const statusColor = res1.status === 401 || res1.status === 402 ? chalk.yellow : chalk.green;
+  console.log(statusColor(`${res1.status}`));
+
+  if (res1.status !== 401 && res1.status !== 402) {
+    console.log(chalk.yellow("  (No 402/401 challenge received. Endpoint may not be protected.)"));
     return;
   }
 
-  const wwwAuth = response.headers.get("www-authenticate");
+  // Step 2: Parse nonce
+  const wwwAuth = res1.headers.get("www-authenticate");
   if (!wwwAuth) {
-    console.error("  No WWW-Authenticate header found.");
-    return;
+    console.error(chalk.red("  No WWW-Authenticate header found."));
+    process.exit(1);
   }
 
-  console.log(`  WWW-Authenticate: ${wwwAuth}`);
   const challenge = parseWWWAuthenticate(wwwAuth);
   if (!challenge) {
-    console.error("  Failed to parse challenge.");
-    return;
+    console.error(chalk.red("  Failed to parse WWW-Authenticate challenge."));
+    process.exit(1);
   }
 
-  console.log(`  Mode: ${challenge.mode}`);
-  console.log(`  Nonce: ${challenge.nonce}`);
+  const nonceShort = challenge.nonce.slice(0, 16) + "...";
+  console.log(`  ${chalk.yellow("②")} nonce: ${chalk.dim(nonceShort)} (${challenge.realm})`);
 
-  // Step 2: Generate key and sign
-  console.log("\nStep 2: Generating key and signing...");
-  const privateKey = "0x" + randomBytes(32).toString("hex");
-  const client = new INTMAX402Client({ privateKey });
-  await client.init();
+  // Step 3: Sign
+  console.log(`  ${chalk.yellow("③")} Signing with wallet: ${chalk.dim(address.slice(0, 8) + "...")}`);
 
-  console.log(`  Address: ${client.getAddress()}`);
-  const signature = await client.sign(challenge.nonce);
-  console.log(`  Signature: ${signature.slice(0, 20)}...`);
+  let authHeader: string;
 
-  // Step 3: Retry with credentials
-  console.log("\nStep 3: Retrying with credentials...");
-  const retryResponse = await client.fetch(url);
-  console.log(`  Status: ${retryResponse.status}`);
-
-  if (retryResponse.ok) {
-    const body = await retryResponse.text();
-    console.log(`  Response: ${body.slice(0, 200)}`);
+  if (mode === "payment") {
+    // Payment mode: include a mock txHash
+    const mockTxHash = "0x" + Buffer.alloc(32).fill(0xab).toString("hex");
+    const message = `${challenge.nonce}:${mockTxHash}`;
+    const signature = await wallet.signMessage(message);
+    authHeader = `INTMAX402 address="${address}",nonce="${challenge.nonce}",signature="${signature}",txHash="${mockTxHash}"`;
   } else {
-    console.log(`  Response: ${await retryResponse.text()}`);
+    // Identity mode: sign just the nonce
+    const signature = await wallet.signMessage(challenge.nonce);
+    authHeader = `INTMAX402 address="${address}",nonce="${challenge.nonce}",signature="${signature}"`;
+  }
+
+  // Step 4: Retry with Authorization
+  process.stdout.write(`  ${chalk.yellow("④")} GET ${new URL(url).pathname} + Authorization → `);
+  let res2: Response;
+  try {
+    res2 = await fetch(url, {
+      headers: { Authorization: authHeader },
+    });
+  } catch (err: any) {
+    console.log(chalk.red(`error: ${err.message}`));
+    process.exit(1);
+  }
+
+  const elapsed = Date.now() - startTime;
+
+  if (res2.ok) {
+    console.log(`${chalk.green(String(res2.status))} ${chalk.green("✅")}`);
+  } else {
+    console.log(`${chalk.red(String(res2.status))} ${chalk.red("❌")}`);
+    const body = await res2.text().catch(() => "");
+    if (body) console.log(chalk.dim(`  ${body.slice(0, 200)}`));
+  }
+
+  console.log();
+  console.log(`${chalk.bold("Address:")} ${address}`);
+  console.log(`${chalk.bold("Time:")} ${elapsed}ms`);
+
+  if (!res2.ok) {
+    process.exit(1);
   }
 }
 
 function keygenCommand() {
-  const privateKey = "0x" + randomBytes(32).toString("hex");
-  const client = new INTMAX402Client({ privateKey });
-  console.log("Generated test keypair:");
-  console.log(`  Private Key: ${privateKey}`);
-  console.log(`  Address:     ${client.getAddress()}`);
+  const wallet = ethers.Wallet.createRandom();
+
+  console.log("\nGenerated wallet:");
+  console.log(`  ${chalk.bold("Address:")}     ${chalk.green(wallet.address)}`);
+  console.log(`  ${chalk.bold("Private Key:")} ${chalk.yellow(wallet.privateKey)}`);
+  console.log();
+  console.log(chalk.red("⚠ Use for testing only. Never use in production."));
 }
 
-function verifyCommand(header?: string) {
-  if (!header) {
-    console.error("Usage: intmax402 verify <authorization-header>");
-    process.exit(1);
-  }
-
-  const credential = parseAuthorization(header);
-  if (!credential) {
-    console.error("Failed to parse Authorization header.");
-    process.exit(1);
-  }
-
-  console.log("Parsed credential:");
-  console.log(`  Address:   ${credential.address}`);
-  console.log(`  Nonce:     ${credential.nonce}`);
-  console.log(`  Signature: ${credential.signature.slice(0, 20)}...`);
-  if (credential.txHash) {
-    console.log(`  TX Hash:   ${credential.txHash}`);
-  }
-}
-
-function printUsage() {
-  console.log("intmax402 CLI - HTTP 402 Payment Gate Test Tool");
-  console.log("");
-  console.log("Usage:");
-  console.log("  intmax402 test <url>       Test 402 flow against a URL");
-  console.log("  intmax402 keygen           Generate a test ETH keypair");
-  console.log("  intmax402 verify <header>  Parse an Authorization header");
+function printHelp() {
+  console.log(`${chalk.bold("intmax402")} - HTTP 402 Payment Gate CLI Tool`);
+  console.log();
+  console.log(chalk.bold("Usage:"));
+  console.log(`  intmax402 ${chalk.cyan("test")} <url> [--mode identity|payment]`);
+  console.log(`                     Test 402 flow against a URL`);
+  console.log(`  intmax402 ${chalk.cyan("keygen")}               Generate a test Ethereum wallet`);
+  console.log(`  intmax402 ${chalk.cyan("--help")}               Show this help message`);
+  console.log();
+  console.log(chalk.bold("Examples:"));
+  console.log(`  intmax402 test http://localhost:3760/identity`);
+  console.log(`  intmax402 test http://localhost:3760/paid --mode payment`);
+  console.log(`  intmax402 keygen`);
 }
 
 main().catch((err) => {
-  console.error("Error:", err.message);
+  console.error(chalk.red("Error:"), err.message);
   process.exit(1);
 });

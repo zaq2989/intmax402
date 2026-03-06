@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "dist/index.js",
   "bin": {
     "intmax402": "dist/index.js"
@@ -12,11 +12,15 @@
   },
   "dependencies": {
     "@tanakayuto/intmax402-core": "0.2.0",
-    "@tanakayuto/intmax402-client": "0.2.0"
+    "chalk": "^4.1.2",
+    "ethers": "^6.16.0",
+    "minimist": "^1.2.8"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "@types/chalk": "^2.2.4",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
   },
   "files": [
     "dist",
