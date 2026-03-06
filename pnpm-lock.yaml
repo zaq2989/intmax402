@@ -149,8 +149,8 @@ importers:
   packages/express:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       ethers:
         specifier: ^6.16.0
         version: 6.16.0
@@ -167,6 +167,47 @@ importers:
       express:
         specifier: ^4.18.0
         version: 4.22.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/fetch-adapter:
+    dependencies:
+      '@tanakayuto/intmax402-core':
+        specifier: 0.2.2
+        version: 0.2.2
+      '@tanakayuto/intmax402-express':
+        specifier: 0.2.2
+        version: 0.2.2(express@4.22.1)(typescript@5.9.3)
+      ethers:
+        specifier: ^6.0.0
+        version: 6.16.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/hono:
+    dependencies:
+      '@tanakayuto/intmax402-core':
+        specifier: 0.2.2
+        version: 0.2.2
+      '@tanakayuto/intmax402-express':
+        specifier: 0.2.2
+        version: 0.2.2(express@4.22.1)(typescript@5.9.3)
+      ethers:
+        specifier: ^6.0.0
+        version: 6.16.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      hono:
+        specifier: ^4.0.0
+        version: 4.12.5
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
@@ -214,8 +255,13 @@ packages:
   '@tanakayuto/intmax402-core@0.2.0':
     resolution: {integrity: sha512-twA+bW9cYo4mdTeobzG3ytLVXQMhunCavsaGvp0gubsGrk8E92HQzZCys2jIWmJBIig6ORDNLHdI2r6hDAUpqw==}
 
-  '@tanakayuto/intmax402-core@0.2.1':
-    resolution: {integrity: sha512-1bw7BrDTmdtiS+7WNTvGIKPGjp+vSsIGS0WdI9G4aP9zX2jGVDsQmxU/FcKEBWZB7h3clRBx+uNc6EbeiCGRqw==}
+  '@tanakayuto/intmax402-core@0.2.2':
+    resolution: {integrity: sha512-hrl2DTvWU51ZA+PRg3jzxXS7L+hEiILBBNjhFdXnKIMZhLBI8WqEi3BTynHqQSNQQOjw0+Weyxs2QdpJoU0p8w==}
+
+  '@tanakayuto/intmax402-express@0.2.2':
+    resolution: {integrity: sha512-2dddwDNgan2n0bW0R9OLZhW0p1s63kVGHHX0Sy41/Qs1ZAavYiVLTIQMn/o74wBqtiueGkbwtTK14jq3doyPWw==}
+    peerDependencies:
+      express: ^4.18.0
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -464,6 +510,10 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
+
+  hono@4.12.5:
+    resolution: {integrity: sha512-3qq+FUBtlTHhtYxbxheZgY8NIFnkkC/MR8u5TTsr7YZ3wixryQ3cCwn3iZbg8p8B88iDBBAYSfZDS75t8MN7Vg==}
+    engines: {node: '>=16.9.0'}
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -718,7 +768,20 @@ snapshots:
 
   '@tanakayuto/intmax402-core@0.2.0': {}
 
-  '@tanakayuto/intmax402-core@0.2.1': {}
+  '@tanakayuto/intmax402-core@0.2.2': {}
+
+  '@tanakayuto/intmax402-express@0.2.2(express@4.22.1)(typescript@5.9.3)':
+    dependencies:
+      '@tanakayuto/intmax402-core': 0.2.2
+      ethers: 6.16.0
+      express: 4.22.1
+      intmax2-server-sdk: 1.5.2(typescript@5.9.3)
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - typescript
+      - utf-8-validate
+      - zod
 
   '@types/body-parser@1.19.6':
     dependencies:
@@ -1012,6 +1075,8 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
+
+  hono@4.12.5: {}
 
   http-errors@2.0.1:
     dependencies:
