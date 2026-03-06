@@ -7,6 +7,7 @@ import {
   parseAuthorization,
 } from "@tanakayuto/intmax402-core";
 import { verifySignature } from "./crypto";
+import { verifyPayment } from "./verify-payment";
 
 declare global {
   namespace Express {
@@ -14,6 +15,7 @@ declare global {
       intmax402?: {
         address: string;
         verified: boolean;
+        txHash?: string;
       };
     }
   }
@@ -90,13 +92,28 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
         res.status(402).json({ error: "Payment transaction hash required" });
         return;
       }
-      // In production, verify payment via intmax2-server-sdk fetchTransfers()
-      // For now, trust the txHash presence as proof-of-payment placeholder
+
+      if (!config.serverAddress || !config.amount) {
+        res.status(500).json({ error: "Server misconfigured: serverAddress and amount required for payment mode" });
+        return;
+      }
+
+      const paymentResult = await verifyPayment(
+        credential.txHash,
+        config.amount,
+        config.serverAddress
+      );
+
+      if (!paymentResult.valid) {
+        res.status(402).json({ error: paymentResult.error || "Payment verification failed" });
+        return;
+      }
     }
 
     req.intmax402 = {
       address: credential.address,
       verified: true,
+      txHash: credential.txHash,
     };
 
     next();

@@ -10,12 +10,13 @@
   },
   "dependencies": {
     "@tanakayuto/intmax402-core": "0.1.2",
-    "ethers": "^6.0.0"
+    "ethers": "^6.0.0",
+    "intmax2-server-sdk": "^1.5.2"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
     "@types/node": "^20.0.0",
-    "ethers": "^6.0.0"
+    "ethers": "^6.0.0",
+    "typescript": "^5.4.0"
   },
   "files": [
     "dist",

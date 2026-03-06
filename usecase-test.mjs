@@ -125,6 +125,88 @@ const r3c = await fetch(`http://localhost:${PORT}/api/news`, {
 });
 r3c.status === 401 ? ok(`無効nonce → 401 (期限切れ)`) : ng(`無効nonce → ${r3c.status}`);
 
+// === シナリオ4: Payment modeの基本フロー ===
+console.log('\n📡 シナリオ4: Payment mode基本フロー\n');
+
+// Payment modeエンドポイント追加（verifyPaymentのIntMaxNodeClientはテスト環境では未初期化なので、
+// プロトコルレベルの検証のみ行う）
+const SERVER_ADDRESS = '0x1234567890abcdef1234567890abcdef12345678';
+const PAYMENT_PORT = 3803;
+const payApp = express();
+payApp.use(express.json());
+payApp.get('/api/premium', intmax402({
+  mode: 'payment',
+  secret: SECRET,
+  serverAddress: SERVER_ADDRESS,
+  amount: '1000',
+}), (req, res) => {
+  res.json({
+    content: 'premium data',
+    paidBy: req.intmax402?.address,
+    txHash: req.intmax402?.txHash,
+  });
+});
+const payServer = payApp.listen(PAYMENT_PORT);
+await new Promise(r => setTimeout(r, 300));
+
+// ケース4-1: Payment modeは402を返す（401ではない）
+const r4a = await fetch(`http://localhost:${PAYMENT_PORT}/api/premium`);
+const d4a = await r4a.json();
+if (r4a.status === 402 && d4a.mode === 'payment') {
+  ok(`Payment mode → 402 (Payment Required)`);
+} else {
+  ng(`Payment mode → ${r4a.status} (想定外: ${JSON.stringify(d4a)})`);
+}
+
+// ケース4-2: WWW-Authenticateにpaymentパラメータが含まれる
+const wwwAuth4 = r4a.headers.get('www-authenticate');
+if (wwwAuth4?.includes('mode="payment"') && wwwAuth4?.includes(`serverAddress="${SERVER_ADDRESS}"`) && wwwAuth4?.includes('amount="1000"')) {
+  ok(`WWW-Authenticate にpayment情報含む`);
+} else {
+  ng(`WWW-Authenticate 不正: ${wwwAuth4}`);
+}
+
+// ケース4-3: txHashなしでアクセス → 402
+const nonce4 = wwwAuth4?.match(/nonce="([^"]+)"/)?.[1];
+const sig4 = await agent.sign(nonce4);
+const r4b = await fetch(`http://localhost:${PAYMENT_PORT}/api/premium`, {
+  headers: { Authorization: `INTMAX402 address="${agent.getAddress()}", nonce="${nonce4}", signature="${sig4}"` }
+});
+const d4b = await r4b.json();
+if (r4b.status === 402 && d4b.error?.includes('transaction hash required')) {
+  ok(`txHashなし → 402 (Payment transaction hash required)`);
+} else {
+  ng(`txHashなし → ${r4b.status}: ${JSON.stringify(d4b)}`);
+}
+
+// ケース4-4: 偽txHashでアクセス → 402 (payment verification failed)
+const r4c_challenge = await fetch(`http://localhost:${PAYMENT_PORT}/api/premium`);
+const nonce4c = r4c_challenge.headers.get('www-authenticate')?.match(/nonce="([^"]+)"/)?.[1];
+const sig4c = await agent.sign(nonce4c);
+const r4c = await fetch(`http://localhost:${PAYMENT_PORT}/api/premium`, {
+  headers: { Authorization: `INTMAX402 address="${agent.getAddress()}", nonce="${nonce4c}", signature="${sig4c}", txHash="0xfake1234567890"` }
+});
+const d4c = await r4c.json();
+if (r4c.status === 402) {
+  ok(`偽txHash → 402 (支払い検証失敗: ${d4c.error})`);
+} else {
+  ng(`偽txHash → ${r4c.status}: ${JSON.stringify(d4c)}`);
+}
+
+payServer.close();
+
+// === シナリオ5: Identity modeリグレッション確認 ===
+console.log('\n📡 シナリオ5: Identity modeリグレッション確認\n');
+
+// 既存のidentity modeが壊れていないことを確認
+const r5 = await agent.fetch(`http://localhost:${PORT}/api/news`);
+const d5 = await r5.json();
+if (r5.status === 200 && d5.accessedBy?.toLowerCase() === agent.getAddress().toLowerCase()) {
+  ok(`Identity mode依然動作: /api/news → 200`);
+} else {
+  ng(`Identity modeリグレッション! ${r5.status} ${JSON.stringify(d5)}`);
+}
+
 // === 結果 ===
 server.close();
 console.log('\n' + '='.repeat(50));
