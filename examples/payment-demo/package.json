@@ -1,0 +1,23 @@
+{
+  "name": "intmax402-payment-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start:server": "node dist/server.js",
+    "start:client": "node dist/client.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tanakayuto/intmax402-core": "workspace:*",
+    "@tanakayuto/intmax402-express": "workspace:*",
+    "@tanakayuto/intmax402-client": "workspace:*",
+    "express": "^4.18.0",
+    "intmax2-server-sdk": "^1.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0"
+  }
+}

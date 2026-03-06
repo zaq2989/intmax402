@@ -15,5 +15,8 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "intmax2-server-sdk": "^1.5.2"
+  }
 }
