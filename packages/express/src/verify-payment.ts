@@ -88,7 +88,7 @@ export async function verifyPayment(
     let transfers = [...response.items];
 
     // Check next page if not found yet and more items exist
-    if (!transfers.find((tx) => tx.digest === txHash) && response.pagination.has_more && response.pagination.next_cursor != null) {
+    if (!transfers.find((tx) => tx.digest === txHash) && response.pagination?.has_more && response.pagination?.next_cursor != null) {
       const response2 = await client.fetchTransfers({ cursor: response.pagination.next_cursor as any, limit: 100 });
       transfers = transfers.concat(response2.items);
     }
