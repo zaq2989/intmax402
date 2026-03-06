@@ -10,12 +10,9 @@ A stateless HTTP payment gating protocol powered by [INTMAX](https://intmax.io) 
 
 | Version | Feature | Status |
 |---|---|---|
-| **v1.0** | Identity mode (wallet ownership proof) | ✅ **Implemented** |
-| v1.1 | Payment mode (INTMAX transfer verification) | 🔜 Planned |
+| **v0.2.0** | Payment mode (INTMAX transfer verification) | ✅ **Implemented** |
+| **v0.1.x** | Identity mode (wallet ownership proof) | ✅ **Implemented** |
 | v2.0 | ZK proof mode | 🔜 Planned |
-
-> **v1.0 scope:** `identity` mode is fully implemented and production-ready.
-> `payment` mode parses the Authorization header but **does not yet verify on-chain transfers** via `intmax2-server-sdk`. Contributions welcome.
 
 ## Install
 
@@ -29,39 +26,60 @@ npm install @tanakayuto/intmax402-client
 
 ## Quick Start
 
-### Server (Express)
+### Identity Mode — Prove Wallet Ownership
+
+No payment required. Just prove you control an INTMAX wallet.
 
 ```typescript
+// Server
 import express from 'express'
 import { intmax402 } from '@tanakayuto/intmax402-express'
 
 const app = express()
 
-// Identity mode — prove INTMAX wallet ownership
 app.get('/premium', intmax402({
   mode: 'identity',
   secret: process.env.INTMAX402_SECRET!,
 }), (req, res) => {
   res.json({ message: 'Access granted', address: req.intmax402?.address })
 })
-
-app.listen(3000)
 ```
 
-### Client (AI Agent)
-
 ```typescript
+// Client (AI agent)
 import { INTMAX402Client } from '@tanakayuto/intmax402-client'
 
-const client = new INTMAX402Client({
-  privateKey: process.env.ETH_PRIVATE_KEY!,
-  environment: 'mainnet',
-})
+const client = new INTMAX402Client({ privateKey: process.env.ETH_PRIVATE_KEY! })
 await client.init()
 
-// Auto-handles 401 → sign → retry in one call
-const response = await client.fetch('https://your-api.com/premium')
-const data = await response.json()
+// Auto-handles 401 → sign → retry
+const res = await client.fetch('https://your-api.com/premium')
+```
+
+### Payment Mode — Pay Per Request
+
+Sign + broadcast an INTMAX transfer. Server verifies the receipt on-chain.
+
+```typescript
+// Server
+app.post('/api/task', intmax402({
+  mode: 'payment',
+  secret: process.env.INTMAX402_SECRET!,
+  serverAddress: process.env.INTMAX_ADDRESS!,
+  amount: '1000000', // 1 USDC (6 decimals)
+}), taskHandler)
+```
+
+```typescript
+// Client (AI agent)
+const client = new INTMAX402Client({ privateKey: process.env.ETH_PRIVATE_KEY! })
+await client.init() // ~7s one-time INTMAX login
+
+// Auto-handles 402 → transfer → sign → retry
+const res = await client.fetchWithPayment('https://your-api.com/api/task', {
+  method: 'POST',
+  body: JSON.stringify({ prompt: 'Analyze this dataset' }),
+})
 ```
 
 ## How It Works
@@ -69,48 +87,39 @@ const data = await response.json()
 ```
 Client                         Server
   │── GET /resource ─────────>  │
-  │<─ 401 + WWW-Authenticate ─  │  nonce = HMAC-SHA256(secret, path + timeWindow)
-  │                              │
-  │  wallet.signMessage(nonce)   │
-  │                              │
-  │── GET + Authorization ────>  │
-  │   INTMAX402 address="..."    │  ethers.verifyMessage(nonce, sig) == address?
-  │            nonce="..."       │
-  │            signature="..."   │
-  │<─ 200 OK ─────────────────   │
+  │<─ 401/402 ────────────────  │  nonce = HMAC-SHA256(secret, path + timeWindow)
+  │   WWW-Authenticate:         │
+  │     INTMAX402               │
+  │     nonce="..."             │
+  │     mode="identity|payment" │
+  │     [serverAddress="..."]   │  ← payment only
+  │     [amount="..."]          │  ← payment only
+  │                             │
+  │  [identity] signMessage()   │
+  │  [payment]  transfer()      │
+  │             signMessage()   │
+  │                             │
+  │── GET + Authorization ────> │
+  │   INTMAX402                 │  verifySignature() + [verifyPayment()]
+  │     address="..."           │
+  │     nonce="..."             │
+  │     signature="..."         │
+  │     [tx_id="..."]           │  ← payment only
+  │<─ 200 OK ─────────────────  │
 ```
 
-**Nonce design (stateless, replay-protected):**
+**Nonce design — stateless, replay-protected:**
 ```
 nonce = HMAC-SHA256(server_secret, url_path + floor(timestamp / 30_000))
 ```
-30-second time windows. No database. No sessions.
+30-second time windows. No database. No sessions. AI-agent friendly (no IP binding).
 
 ## Modes
 
-### `identity` — Wallet Ownership Proof ✅
-
-Prove you control an INTMAX wallet. No payment required.
-
-```typescript
-intmax402({ mode: 'identity', secret: process.env.SECRET! })
-```
-
-Use cases: premium API access, rate limiting by wallet, allowlists.
-
-### `payment` — Pay Per Request 🔜 (v1.1)
-
-Sign + broadcast an INTMAX transfer, server verifies the receipt.
-
-```typescript
-// Coming in v1.1
-intmax402({
-  mode: 'payment',
-  secret: process.env.SECRET!,
-  serverAddress: process.env.INTMAX_ADDRESS!,
-  amount: '1000000', // $1.00 USDC
-})
-```
+| Mode | HTTP Status | Use case |
+|---|---|---|
+| `identity` | 401 | Premium access, rate limiting by wallet, allowlists |
+| `payment` | 402 | Pay-per-use API, AI agent micropayments |
 
 ## Packages
 
@@ -118,7 +127,7 @@ intmax402({
 |---|---|
 | [`@tanakayuto/intmax402-core`](https://www.npmjs.com/package/@tanakayuto/intmax402-core) | Protocol types, nonce generation, verification |
 | [`@tanakayuto/intmax402-express`](https://www.npmjs.com/package/@tanakayuto/intmax402-express) | Express middleware |
-| [`@tanakayuto/intmax402-client`](https://www.npmjs.com/package/@tanakawuto/intmax402-client) | Client SDK with auto-retry |
+| [`@tanakayuto/intmax402-client`](https://www.npmjs.com/package/@tanakayuto/intmax402-client) | Client SDK with auto-retry |
 | [`@tanakayuto/intmax402-cli`](https://www.npmjs.com/package/@tanakayuto/intmax402-cli) | CLI testing tool |
 
 ## Why INTMAX?
@@ -131,13 +140,13 @@ intmax402({
 | EVM compatible | ❌ | ❌ | ❌ | ✅ |
 | Auth latency | ~1ms | ~1ms | 50-200ms | **~10ms** |
 | AI agent friendly | △ | △ | △ | ✅ |
+| Micropayments | ❌ | ❌ | ✅ | ✅ |
 
-## Contributing
+## Examples
 
-Payment mode (`v1.1`) needs `intmax2-server-sdk` integration to verify on-chain transfers.
-See [`packages/express/src/middleware.ts`](packages/express/src/middleware.ts) — the hook is already there.
-
-PRs welcome.
+- [`examples/basic-express/`](examples/basic-express/) — Identity mode server
+- [`examples/payment-demo/`](examples/payment-demo/) — Payment mode server + client
+- [`examples/agent-to-agent/`](examples/agent-to-agent/) — AI agent calling AI agent
 
 ## License
 
