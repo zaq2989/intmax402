@@ -24,79 +24,83 @@ declare global {
 
 export function intmax402(config: INTMAX402Config): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+    try {
+      const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+      if (!authHeader) {
+        const ip = req.ip || req.socket.remoteAddress || "unknown";
+        const nonce = generateNonce(config.secret, ip, req.path, config.bindIp ?? false);
+        const statusCode = config.mode === "payment" ? 402 : 401;
+        res.setHeader("WWW-Authenticate", buildWWWAuthenticate(nonce, config));
+        res.status(statusCode).json({
+          error: config.mode === "payment" ? "Payment Required" : "Unauthorized",
+          protocol: "INTMAX402",
+          mode: config.mode,
+        });
+        return;
+      }
+
+      const credential = parseAuthorization(authHeader);
+      if (!credential) {
+        res.status(401).json({ error: "Invalid authorization header" });
+        return;
+      }
+
       const ip = req.ip || req.socket.remoteAddress || "unknown";
-      const nonce = generateNonce(config.secret, ip, req.path, config.bindIp ?? false);
-      const statusCode = config.mode === "payment" ? 402 : 401;
-      res.setHeader("WWW-Authenticate", buildWWWAuthenticate(nonce, config));
-      res.status(statusCode).json({
-        error: config.mode === "payment" ? "Payment Required" : "Unauthorized",
-        protocol: "INTMAX402",
-        mode: config.mode,
-      });
-      return;
-    }
-
-    const credential = parseAuthorization(authHeader);
-    if (!credential) {
-      res.status(401).json({ error: "Invalid authorization header" });
-      return;
-    }
-
-    const ip = req.ip || req.socket.remoteAddress || "unknown";
-    if (!verifyNonce(credential.nonce, config.secret, ip, req.path, config.bindIp ?? false)) {
-      res.status(401).json({ error: "Invalid or expired nonce" });
-      return;
-    }
-
-    if (config.allowList && config.allowList.length > 0) {
-      if (!config.allowList.includes(credential.address.toLowerCase())) {
-        res.status(403).json({ error: "Address not in allow list" });
-        return;
-      }
-    }
-
-    const isValidSig = verifySignature(
-      credential.signature,
-      credential.nonce,
-      credential.address
-    );
-    if (!isValidSig) {
-      res.status(401).json({ error: "Invalid signature" });
-      return;
-    }
-
-    if (config.mode === "payment") {
-      if (!credential.txHash) {
-        res.status(402).json({ error: "Payment transaction hash required" });
+      if (!verifyNonce(credential.nonce, config.secret, ip, req.path, config.bindIp ?? false)) {
+        res.status(401).json({ error: "Invalid or expired nonce" });
         return;
       }
 
-      if (!config.serverAddress || !config.amount) {
-        res.status(500).json({ error: "Server misconfigured: serverAddress and amount required for payment mode" });
-        return;
+      if (config.allowList && config.allowList.length > 0) {
+        if (!config.allowList.includes(credential.address.toLowerCase())) {
+          res.status(403).json({ error: "Address not in allow list" });
+          return;
+        }
       }
 
-      const paymentResult = await verifyPayment(
-        credential.txHash,
-        config.amount,
-        config.serverAddress
+      const isValidSig = verifySignature(
+        credential.signature,
+        credential.nonce,
+        credential.address
       );
-
-      if (!paymentResult.valid) {
-        res.status(402).json({ error: paymentResult.error || "Payment verification failed" });
+      if (!isValidSig) {
+        res.status(401).json({ error: "Invalid signature" });
         return;
       }
+
+      if (config.mode === "payment") {
+        if (!credential.txHash) {
+          res.status(402).json({ error: "Payment transaction hash required" });
+          return;
+        }
+
+        if (!config.serverAddress || !config.amount) {
+          res.status(500).json({ error: "Server misconfigured: serverAddress and amount required for payment mode" });
+          return;
+        }
+
+        const paymentResult = await verifyPayment(
+          credential.txHash,
+          config.amount,
+          config.serverAddress
+        );
+
+        if (!paymentResult.valid) {
+          res.status(402).json({ error: paymentResult.error || "Payment verification failed" });
+          return;
+        }
+      }
+
+      req.intmax402 = {
+        address: credential.address,
+        verified: true,
+        txHash: credential.txHash,
+      };
+
+      next();
+    } catch (err) {
+      next(err);
     }
-
-    req.intmax402 = {
-      address: credential.address,
-      verified: true,
-      txHash: credential.txHash,
-    };
-
-    next();
   };
 }
