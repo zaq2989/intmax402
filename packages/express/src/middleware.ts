@@ -45,7 +45,7 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
 
     if (!authHeader) {
       const ip = req.ip || req.socket.remoteAddress || "unknown";
-      const nonce = generateNonce(config.secret, ip, req.path);
+      const nonce = generateNonce(config.secret, ip, req.path, config.bindIp ?? false);
       const statusCode = config.mode === "payment" ? 402 : 401;
       res.setHeader("WWW-Authenticate", buildWWWAuthenticate(nonce, config));
       res.status(statusCode).json({
@@ -63,7 +63,7 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
     }
 
     const ip = req.ip || req.socket.remoteAddress || "unknown";
-    if (!verifyNonce(credential.nonce, config.secret, ip, req.path)) {
+    if (!verifyNonce(credential.nonce, config.secret, ip, req.path, config.bindIp ?? false)) {
       res.status(401).json({ error: "Invalid or expired nonce" });
       return;
     }
