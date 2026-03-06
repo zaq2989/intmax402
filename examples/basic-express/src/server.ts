@@ -1,5 +1,5 @@
 import express from "express";
-import { intmax402 } from "@intmax402/express";
+import { intmax402 } from "@tanakayuto/intmax402-express";
 
 const app = express();
 const PORT = 3760;
