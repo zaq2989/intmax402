@@ -1,5 +1,5 @@
 {
-  "name": "@intmax402/cli",
+  "name": "@tanakayuto/intmax402-cli",
   "version": "0.1.0",
   "main": "dist/index.js",
   "bin": {
@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@intmax402/core": "workspace:*",
-    "@intmax402/client": "workspace:*"
+    "@tanakayuto/intmax402-core": "0.1.0",
+    "@tanakayuto/intmax402-client": "0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

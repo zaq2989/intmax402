@@ -1,5 +1,5 @@
 {
-  "name": "@intmax402/express",
+  "name": "@tanakayuto/intmax402-express",
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@intmax402/core": "workspace:*",
+    "@tanakayuto/intmax402-core": "0.1.0",
     "ethers": "^6.16.0"
   },
   "peerDependencies": {

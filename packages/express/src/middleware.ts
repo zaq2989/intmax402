@@ -5,7 +5,7 @@ import {
   generateNonce,
   verifyNonce,
   parseAuthorization,
-} from "@intmax402/core";
+} from "@tanakayuto/intmax402-core";
 import { verifySignature } from "./crypto";
 
 declare global {
