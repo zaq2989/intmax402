@@ -2,7 +2,7 @@ import { INTMAX402Config } from "./types"
 
 // Remove characters that could break the WWW-Authenticate header format
 function sanitize(value: string): string {
-  return value.replace(/["\\r\n]/g, "")
+  return value.replace(/["\\]|\r|\n/g, "")
 }
 
 export function buildWWWAuthenticate(nonce: string, config: INTMAX402Config): string {
