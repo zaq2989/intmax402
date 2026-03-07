@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-nextjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "INTMAX402 middleware for Next.js App Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,16 +10,32 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md"],
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/zaq2989/intmax402" },
-  "keywords": ["intmax", "http-402", "payment", "nextjs", "app-router", "middleware", "ai-agent"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zaq2989/intmax402"
+  },
+  "keywords": [
+    "intmax",
+    "http-402",
+    "payment",
+    "nextjs",
+    "app-router",
+    "middleware",
+    "ai-agent"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "next": ">=14.0.0"
   },
   "dependencies": {
-    "@tanakayuto/intmax402-core": "workspace:*",
+    "@tanakayuto/intmax402-core": "^0.2.6",
     "@tanakayuto/intmax402-fetch": "workspace:*",
     "ethers": "^6.0.0"
   },
