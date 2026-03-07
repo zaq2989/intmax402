@@ -1,15 +1,31 @@
 {
   "name": "@tanakayuto/intmax402-fetch",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "README.md"],
-  "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/zaq2989/intmax402" },
-  "keywords": ["intmax", "http-402", "payment", "ai-agent", "fetch", "web-standard", "cloudflare-workers"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zaq2989/intmax402"
+  },
+  "keywords": [
+    "intmax",
+    "http-402",
+    "payment",
+    "ai-agent",
+    "fetch",
+    "web-standard",
+    "cloudflare-workers"
+  ],
   "license": "MIT",
   "dependencies": {
-    "@tanakayuto/intmax402-core": "workspace:*",
+    "@tanakayuto/intmax402-core": "^0.2.6",
     "@tanakayuto/intmax402-express": "workspace:*",
     "ethers": "^6.0.0"
   },

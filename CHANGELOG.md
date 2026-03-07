@@ -133,3 +133,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 | `@tanakayuto/intmax402-cli` | 0.3.1 |
 | `@tanakayuto/intmax402-fetch` | 0.1.2 |
 | `@tanakayuto/intmax402-hono` | 0.1.2 |
+
+## [0.2.6] - 2026-03-07
+
+### Fixed
+- **core**: `sanitize()` regex bug — `/["\\r\n]/g` was removing literal `r` characters from values (e.g. `realm`→`ealm`, `serverAddress` with `r` chars corrupted). Fixed to `/["\\]|\r|\n/g`.
+- This affected `buildWWWAuthenticate()` in payment mode when `serverAddress` contained the letter `r` (all real INTMAX L2 addresses are affected).
+
+### Updated (core dep → ^0.2.6)
+- `@tanakayuto/intmax402-express@0.2.6`
+- `@tanakayuto/intmax402-client@0.2.2`
+- `@tanakayuto/intmax402-cli@0.3.2`
+- `@tanakayuto/intmax402-fetch@0.1.3`
+- `@tanakayuto/intmax402-hono@0.1.3`
+- `@tanakayuto/intmax402-nextjs@0.1.1` (also fixed `workspace:*` → `^0.2.6`)
+
+## [0.1.1] - 2026-03-07 (intmax402-nextjs)
+
+### Fixed
+- Replaced `workspace:*` dependency with explicit `^0.2.6` so the package works outside pnpm workspaces
