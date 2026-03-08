@@ -10,6 +10,8 @@
 
 A stateless HTTP authentication & micropayment protocol. Prove wallet ownership or send gas-free payments in **~10ms**, with no blockchain node required. Designed for AI agent-to-agent payments, API monetization, and privacy-preserving access control.
 
+**Works on Ethereum mainnet** (via INTMAX ZK L2 on Scroll). Testnet (Sepolia + Scroll Sepolia) is also supported for development.
+
 **Benchmark:** sign=4ms, verify=6ms → **10ms total** (vs. XMR402's 50-200ms)
 
 ---
@@ -76,6 +78,7 @@ app.listen(3000)
 ```typescript
 import { INTMAX402Client } from '@tanakayuto/intmax402-client'
 
+// Defaults to mainnet (Ethereum mainnet + Scroll)
 const client = new INTMAX402Client({ privateKey: process.env.ETH_PRIVATE_KEY! })
 await client.init()
 
@@ -206,7 +209,7 @@ app.get('/exclusive', intmax402({
 | Example | Description |
 |---|---|
 | [`examples/basic-express/`](examples/basic-express/) | Identity mode server — simplest possible setup |
-| [`examples/payment-demo/`](examples/payment-demo/) | Payment mode server + client on testnet |
+| [`examples/payment-demo/`](examples/payment-demo/) | Payment mode server + client (mainnet by default, testnet for dev) |
 | [`examples/agent-to-agent/`](examples/agent-to-agent/) | AI agent calling AI agent (self-contained demo) |
 | [`examples/hono-example/`](examples/hono-example/) | Hono framework (edge-compatible) |
 
@@ -232,6 +235,7 @@ app.get('/exclusive', intmax402({
 | **v0.2.x** | Payment mode (INTMAX transfer verification) | ✅ Done |
 | **v0.2.x** | Hono + Fetch adapter (edge runtime) | ✅ Done |
 | **v0.3.x** | CLI improvements + keygen | ✅ Done |
+| **v0.3.x** | Ethereum mainnet support (default) | ✅ Done |
 | **v0.x** | Next.js middleware + App Router support | 🔜 In progress |
 | **v1.0** | Stable API, full test coverage | 🔜 Planned |
 | **v2.0** | ZK proof mode (full privacy) | 🔜 Planned |

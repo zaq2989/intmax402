@@ -87,6 +87,15 @@ export const config = {
 4. Client retries with `Authorization: INTMAX402 address=<addr>,nonce=<nonce>,signature=<sig>`
 5. Server verifies signature and grants access
 
+## Network
+
+intmax402-nextjs operates on **Ethereum mainnet** by default (via INTMAX ZK L2 on Scroll). Pass `environment: "testnet"` for development against Sepolia.
+
+| Environment | Network | L1 Chain ID |
+|---|---|---|
+| `mainnet` (default) | Ethereum + Scroll | `1` |
+| `testnet` | Sepolia + Scroll Sepolia | `11155111` |
+
 ## License
 
 MIT
