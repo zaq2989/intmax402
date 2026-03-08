@@ -90,6 +90,15 @@ No changes needed for Workers — Hono's fetch handler works natively:
 export default app
 ```
 
+## Network
+
+intmax402-hono operates on **Ethereum mainnet** by default (via INTMAX ZK L2 on Scroll). Use `environment: "testnet"` for development.
+
+| Environment | Network | L1 Chain ID |
+|---|---|---|
+| `mainnet` (default) | Ethereum + Scroll | `1` |
+| `testnet` | Sepolia + Scroll Sepolia | `11155111` |
+
 ## License
 
 MIT

@@ -25,7 +25,7 @@ export class INTMAX402Client {
       throw new Error("Invalid private key: must be a 32-byte hex string (0x-prefixed)");
     }
     this.wallet = new ethers.Wallet(options.privateKey);
-    this.environment = options.environment || "testnet";
+    this.environment = options.environment || "mainnet";
   }
 
   async init(): Promise<void> {

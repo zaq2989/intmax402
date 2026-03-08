@@ -116,6 +116,15 @@ interface Intmax402Context {
 }
 ```
 
+## Network / ネットワーク
+
+intmax402-fetch は **Ethereum mainnet**（INTMAX ZK L2 on Scroll）をデフォルトで使用します。開発時は `environment: "testnet"` を指定してください。
+
+| Environment | Network | L1 Chain ID |
+|---|---|---|
+| `mainnet` (default) | Ethereum + Scroll | `1` |
+| `testnet` | Sepolia + Scroll Sepolia | `11155111` |
+
 ## ライセンス
 
 MIT
