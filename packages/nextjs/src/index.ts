@@ -143,6 +143,8 @@ export function withIntmax402(
       environment: options.environment,
       allowList: options.allowList,
       bindIp: options.bindIp,
+      l1RpcUrl: options.l1RpcUrl,
+      ethPrivateKey: options.ethPrivateKey,
     }
 
     const result = await handleIntmax402(req, config)
