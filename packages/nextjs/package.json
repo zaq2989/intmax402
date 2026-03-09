@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-nextjs",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "INTMAX402 middleware for Next.js App Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
