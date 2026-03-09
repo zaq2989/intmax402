@@ -53,7 +53,7 @@ npm install @tanakayuto/intmax402-client
 npm install -g @tanakayuto/intmax402-cli
 ```
 
-### 2. Server — Protect an endpoint
+### 2a. Server — Identity mode (prove wallet ownership)
 
 ```typescript
 import express from 'express'
@@ -73,7 +73,36 @@ app.get('/premium', intmax402({
 app.listen(3000)
 ```
 
-### 3. Client — Auto-authenticate
+### 2b. Server — Payment mode (require INTMAX micropayment)
+
+> **v0.3.1+**: Pass `ethPrivateKey` directly in config — no separate `initPaymentVerifier()` call needed.
+
+```typescript
+import express from 'express'
+import { intmax402 } from '@tanakayuto/intmax402-express'
+
+const app = express()
+
+// Payment mode: require INTMAX L2 transfer before access
+app.use('/api/premium', intmax402({
+  mode: 'payment',
+  secret: process.env.INTMAX402_SECRET!,
+  serverAddress: process.env.INTMAX_ADDRESS!,  // your INTMAX mainnet address
+  amount: '1000000000000000',                   // 0.001 ETH in wei
+  environment: 'mainnet',
+  ethPrivateKey: process.env.ETH_PRIVATE_KEY!,  // auto-initializes verifier (v0.3.1+)
+}), (req, res) => {
+  res.json({ message: 'Payment verified!', txHash: req.intmax402?.txHash })
+})
+
+app.listen(3000)
+```
+
+**Getting your INTMAX address:**
+- Deposit ETH to INTMAX L2 at [https://app.intmax.io](https://app.intmax.io) (mainnet) or [https://testnet.intmax.io](https://testnet.intmax.io) (testnet)
+- Your INTMAX L2 address is derived from your Ethereum private key — use `intmax402 keygen` or the SDK to retrieve it
+
+### 3. Client — Auto-authenticate (identity mode)
 
 ```typescript
 import { INTMAX402Client } from '@tanakayuto/intmax402-client'
@@ -86,6 +115,26 @@ await client.init()
 const res = await client.fetch('http://localhost:3000/premium')
 const data = await res.json()
 console.log(data) // { message: 'Access granted', address: '0x...' }
+```
+
+### 3b. Client — Auto-pay (payment mode)
+
+```typescript
+import { INTMAX402Client } from '@tanakayuto/intmax402-client'
+
+const client = new INTMAX402Client({
+  privateKey: process.env.ETH_PRIVATE_KEY!,
+  environment: 'mainnet',
+})
+
+// Initialize INTMAX L2 payment capability
+// Fund your wallet first at https://app.intmax.io (mainnet) or https://testnet.intmax.io (testnet)
+await client.initPayment()
+
+// Automatically handles 402 → pay → retry with txHash
+const res = await client.fetch('http://localhost:3000/api/premium')
+const data = await res.json()
+console.log(data) // { message: 'Payment verified!', txHash: '0x...' }
 ```
 
 ### 4. Test instantly with the CLI
@@ -121,7 +170,7 @@ Time: 12ms
 | [`@tanakayuto/intmax402-cli`](https://www.npmjs.com/package/@tanakayuto/intmax402-cli) | CLI tool — test any endpoint instantly | ![npm](https://img.shields.io/npm/v/@tanakayuto/intmax402-cli) |
 | [`@tanakayuto/intmax402-fetch`](https://www.npmjs.com/package/@tanakayuto/intmax402-fetch) | Fetch API adapter (Cloudflare Workers, Deno, Edge) | ![npm](https://img.shields.io/npm/v/@tanakayuto/intmax402-fetch) |
 | [`@tanakayuto/intmax402-hono`](https://www.npmjs.com/package/@tanakayuto/intmax402-hono) | Hono middleware (edge-compatible) | ![npm](https://img.shields.io/npm/v/@tanakayuto/intmax402-hono) |
-| `intmax402-nextjs` _(coming soon)_ | Next.js middleware + App Router support | 🔜 |
+| [`@tanakayuto/intmax402-nextjs`](https://www.npmjs.com/package/@tanakayuto/intmax402-nextjs) | Next.js middleware + App Router support | ![npm](https://img.shields.io/npm/v/@tanakayuto/intmax402-nextjs) |
 
 ---
 
@@ -163,6 +212,40 @@ nonce = HMAC-SHA256(server_secret, url_path + floor(timestamp / 30_000))
 |---|---|---|
 | `identity` | 401 | Premium access, rate limiting by wallet, allowlists |
 | `payment` | 402 | Pay-per-use API, AI agent micropayments |
+
+---
+
+## API Reference — `intmax402(config)` Options
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `mode` | `'identity' \| 'payment'` | ✅ | Authentication mode |
+| `secret` | `string` | ✅ | HMAC secret for nonce generation (keep private) |
+| `serverAddress` | `string` | payment | Your INTMAX L2 address to receive payments |
+| `amount` | `string` | payment | Payment amount in token smallest unit (wei for ETH) |
+| `ethPrivateKey` | `string` | payment† | Ethereum private key — auto-initializes the INTMAX payment verifier (v0.3.1+). †Alternative to calling `initPaymentVerifier()` manually |
+| `environment` | `'mainnet' \| 'testnet'` | — | Network environment. Default: `'mainnet'` |
+| `l1RpcUrl` | `string` | — | Custom L1 RPC URL override |
+| `allowList` | `string[]` | — | Identity mode: restrict access to specific addresses |
+| `bindIp` | `boolean` | — | Bind nonce to client IP. Default `false` (recommended for AI agents) |
+| `tokenAddress` | `string` | — | ERC-20 token address for payment. Default: native ETH |
+
+---
+
+## Getting ETH onto INTMAX L2
+
+Payment mode requires ETH (or tokens) deposited on the INTMAX ZK L2 network. Here's how:
+
+| Network | Deposit URL | Notes |
+|---|---|---|
+| **Mainnet** | [https://app.intmax.io](https://app.intmax.io) | Deposit from Ethereum mainnet |
+| **Testnet** | [https://testnet.intmax.io](https://testnet.intmax.io) | Deposit from Sepolia testnet |
+
+1. Connect your Ethereum wallet at the link above
+2. Deposit ETH (gas-free on the L2 side)
+3. Use the same private key in your intmax402 server config or client
+
+Your INTMAX L2 address is automatically derived from your Ethereum private key — no separate key management needed.
 
 ---
 

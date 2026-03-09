@@ -8,18 +8,21 @@ if (!CLIENT_PRIVATE_KEY) {
   process.exit(1);
 }
 const PRIVATE_KEY = CLIENT_PRIVATE_KEY as string;
+const ENVIRONMENT = (process.env.INTMAX_ENV as "testnet" | "mainnet") || "testnet";
 
 async function main() {
   const client = new INTMAX402Client({
     privateKey: PRIVATE_KEY,
-    environment: "testnet",
+    environment: ENVIRONMENT,
   });
 
-  // Initialize payment capability
-  console.log("Initializing client with payment support...");
-  await client.initPayment("https://sepolia.gateway.tenderly.co");
-  console.log(`Client address: ${client.getAddress()}`);
-  console.log(`Client INTMAX address: ${client.getIntMaxAddress()}`);
+  // Initialize payment capability (logs into INTMAX L2 network)
+  // For testnet: fund your wallet at https://testnet.intmax.io
+  // For mainnet: deposit ETH at https://app.intmax.io
+  console.log(`Initializing client with payment support (${ENVIRONMENT})...`);
+  await client.initPayment();
+  console.log(`Client Ethereum address: ${client.getAddress()}`);
+  console.log(`Client INTMAX L2 address: ${client.getIntMaxAddress()}`);
 
   // Access free endpoint
   console.log("\n--- Accessing free endpoint ---");
@@ -28,6 +31,11 @@ async function main() {
   console.log(`Response: ${JSON.stringify(await freeRes.json())}`);
 
   // Access payment-gated endpoint
+  // The client automatically handles the full flow:
+  //   1. GET /premium → 402 with payment challenge
+  //   2. Send INTMAX transfer to server's address
+  //   3. Retry GET with Authorization + txHash
+  //   4. Receive 200 with result
   console.log("\n--- Accessing payment-gated endpoint ---");
   console.log("This will automatically send payment and include proof...");
   const premiumRes = await client.fetch(`${SERVER_URL}/premium`);
