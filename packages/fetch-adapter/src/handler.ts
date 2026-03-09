@@ -1,6 +1,6 @@
 import { generateNonce, verifyNonce, parseAuthorization, INTMAX402Config, buildWWWAuthenticate } from "@tanakayuto/intmax402-core"
 import { verifySignature } from "@tanakayuto/intmax402-express/crypto"
-import { verifyPayment } from "@tanakayuto/intmax402-express/verify-payment"
+import { initPaymentVerifier, verifyPayment } from "@tanakayuto/intmax402-express/verify-payment"
 
 export interface Intmax402Context {
   address: string
@@ -13,10 +13,29 @@ export interface Intmax402Context {
  * Returns null if auth passes (proceed to next handler).
  * Returns Response if auth fails (return this response to client).
  */
+// Per-config init promises to avoid duplicate initialization
+const initPromises = new WeakMap<INTMAX402Config, Promise<void>>();
+
 export async function handleIntmax402(
   request: Request,
   config: INTMAX402Config
 ): Promise<{ response: Response; context: null } | { response: null; context: Intmax402Context }> {
+  // Auto-initialize payment verifier if ethPrivateKey is provided
+  if (config.mode === "payment" && config.ethPrivateKey) {
+    if (!initPromises.has(config)) {
+      console.log("[intmax402] Payment verifier initializing...");
+      initPromises.set(
+        config,
+        initPaymentVerifier({
+          eth_private_key: config.ethPrivateKey as `0x${string}`,
+          environment: config.environment ?? "mainnet",
+          l1_rpc_url: config.l1RpcUrl,
+        })
+      );
+    }
+    await initPromises.get(config);
+  }
+
   try {
     const url = new URL(request.url)
     const authHeader = request.headers.get("authorization")

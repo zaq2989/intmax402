@@ -8,7 +8,7 @@ import {
   buildWWWAuthenticate,
 } from "@tanakayuto/intmax402-core";
 import { verifySignature } from "./crypto";
-import { verifyPayment } from "./verify-payment";
+import { initPaymentVerifier, verifyPayment } from "./verify-payment";
 
 declare global {
   namespace Express {
@@ -23,8 +23,24 @@ declare global {
 }
 
 export function intmax402(config: INTMAX402Config): RequestHandler {
+  // Auto-initialize payment verifier if ethPrivateKey is provided
+  let initPromise: Promise<void> | null = null;
+  if (config.mode === "payment" && config.ethPrivateKey) {
+    console.log("[intmax402] Payment verifier initializing...");
+    initPromise = initPaymentVerifier({
+      eth_private_key: config.ethPrivateKey as `0x${string}`,
+      environment: config.environment ?? "mainnet",
+      l1_rpc_url: config.l1RpcUrl,
+    });
+  }
+
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Wait for payment verifier initialization if in progress
+      if (initPromise) {
+        await initPromise;
+        initPromise = null;
+      }
       const authHeader = req.headers.authorization;
 
       if (!authHeader) {

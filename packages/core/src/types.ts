@@ -42,4 +42,6 @@ export interface INTMAX402Config {
   pricing?: Record<string, string>;
   /** Bind nonce to client IP. Default false (recommended for AI agents). */
   bindIp?: boolean;
+  /** Server private key for auto-initializing the payment verifier (payment mode only). */
+  ethPrivateKey?: string;
 }
