@@ -16,6 +16,24 @@ A stateless HTTP authentication & micropayment protocol. Prove wallet ownership 
 
 ---
 
+## 🚀 Try It Now — No Code Required
+
+```bash
+# 1. Install the CLI
+npm install -g @tanakayuto/intmax402-cli
+
+# 2. Generate a test wallet
+intmax402 keygen
+
+# 3. Hit the live demo server — prove your wallet in ~10ms
+intmax402 test https://intmax402-demo-production.up.railway.app/api/identity
+```
+
+Live demo: **https://intmax402-demo-production.up.railway.app**  
+Demo source: [github.com/zaq2989/intmax402-demo](https://github.com/zaq2989/intmax402-demo)
+
+---
+
 ## Why INTMAX402?
 
 | | API Keys | JWT | XMR402 | **intmax402** |
