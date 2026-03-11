@@ -72,7 +72,7 @@ export async function initPaymentVerifier(
 }
 
 export function getPaymentVerifierAddress(): string {
-  if (!client) throw new Error("Payment verifier not initialized. Call initPaymentVerifier() first.");
+  if (!client) throw new INTMAX402Error(INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE, "Payment verifier not initialized. Call initPaymentVerifier() first.");
   return client.address;
 }
 
