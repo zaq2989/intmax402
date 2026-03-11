@@ -1,4 +1,5 @@
 import { IntMaxNodeClient } from "intmax2-server-sdk";
+import { INTMAX402Error, INTMAX402_ERROR_CODES } from "@tanakayuto/intmax402-core";
 
 export interface PaymentVerificationConfig {
   eth_private_key: `0x${string}`;
@@ -82,10 +83,10 @@ export async function verifyPayment(
   tokenIndex?: number
 ): Promise<VerifyPaymentResult> {
   if (!client || !client.isLoggedIn) {
-    return {
-      valid: false,
-      error: "Payment verifier temporarily unavailable. INTMAX network may be down.",
-    };
+    throw new INTMAX402Error(
+      INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE,
+      "Payment verifier temporarily unavailable. INTMAX network may be down."
+    );
   }
 
   // Replay prevention: check if txHash was already used (or pending)
@@ -132,21 +133,33 @@ export async function verifyPayment(
     if (!match) {
       // Fix 1: Rollback on validation failure
       usedTxHashes.delete(txHash);
-      return { valid: false, error: "Transaction not found in recent transfers" };
+      throw new INTMAX402Error(
+        INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND,
+        "Transaction not found in recent transfers",
+        { txHash }
+      );
     }
 
     // Verify recipient matches server address
     if (match.to?.toLowerCase() !== serverAddress.toLowerCase()) {
       // Fix 1: Rollback on validation failure
       usedTxHashes.delete(txHash);
-      return { valid: false, error: "Recipient does not match server address" };
+      throw new INTMAX402Error(
+        INTMAX402_ERROR_CODES.PAYMENT_RECIPIENT_MISMATCH,
+        "Recipient does not match server address",
+        { expected: serverAddress, got: match.to }
+      );
     }
 
     // Fix 2: Verify amount using BigInt comparison (allows >= expectedAmount)
     if (BigInt(match.amount) < BigInt(expectedAmount)) {
       // Fix 1: Rollback on validation failure
       usedTxHashes.delete(txHash);
-      return { valid: false, error: `Amount mismatch: expected ${expectedAmount}, got ${match.amount}` };
+      throw new INTMAX402Error(
+        INTMAX402_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH,
+        `Amount mismatch: expected ${expectedAmount}, got ${match.amount}`,
+        { expected: expectedAmount, got: match.amount }
+      );
     }
 
     // Verify token if specified
