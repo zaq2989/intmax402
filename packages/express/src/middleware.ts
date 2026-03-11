@@ -37,9 +37,18 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Wait for payment verifier initialization if in progress
-      if (initPromise) {
-        await initPromise;
-        initPromise = null;
+      try {
+        if (initPromise) {
+          await initPromise;
+          initPromise = null;
+        }
+      } catch (e) {
+        res.status(503).json({
+          error: 'Payment verifier temporarily unavailable',
+          hint: 'INTMAX network may be experiencing issues. Please try again later.',
+          protocol: 'INTMAX402',
+        });
+        return;
       }
       const authHeader = req.headers.authorization;
 
