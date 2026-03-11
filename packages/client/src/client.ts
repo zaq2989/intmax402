@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
-import { IntMaxNodeClient, Token } from "intmax2-server-sdk";
+import { IntMaxNodeClient, Token, TokenType } from "intmax2-server-sdk";
 
 const RPC_URLS = {
   mainnet: "https://api.rpc.intmax.io?network=ethereum",
@@ -62,15 +62,27 @@ export class INTMAX402Client {
 
   async sendPayment(
     recipientAddress: string,
-    amount: string,
+    amountEth: number,
     token: Token
   ): Promise<{ txTreeRoot: string; transferDigest: string }> {
     if (!this.intmaxClient) {
       throw new Error("Call initPayment() before sending payments");
     }
 
+    // Sync before sending payment (with timeout, failure is non-fatal)
+    try {
+      await Promise.race([
+        this.intmaxClient.sync(),
+        new Promise((_, rej) =>
+          setTimeout(() => rej(new Error("sync timeout")), 30000)
+        ),
+      ]);
+    } catch (e) {
+      // sync failed or timed out, continue anyway
+    }
+
     const result = await this.intmaxClient.broadcastTransaction([
-      { address: recipientAddress, amount, token },
+      { address: recipientAddress, amount: amountEth, token },
     ]);
 
     return {
@@ -130,9 +142,17 @@ export class INTMAX402Client {
         paymentToken = tokens.find((t) => t.tokenIndex === 0) || tokens[0];
       }
 
+      // Fix: getTokensList() doesn't set tokenType for native token
+      if (paymentToken.tokenIndex === 0) {
+        paymentToken = { ...paymentToken, tokenType: TokenType.NATIVE };
+      }
+
+      // Convert amount from wei string to ETH number
+      const amountEth = Number(challenge.amount) / 1e18;
+
       const { transferDigest } = await this.sendPayment(
         challenge.serverAddress,
-        challenge.amount,
+        amountEth,
         paymentToken
       );
 
