@@ -343,6 +343,30 @@ app.get('/exclusive', intmax402({
 
 ---
 
+## Security
+
+### HTTPS Required in Production
+
+intmax402 relies on TLS to prevent active MITM replay attacks.
+Always deploy behind HTTPS:
+
+| Environment | HTTPS |
+|---|---|
+| Railway / Vercel / Render | Automatic ✅ |
+| Self-hosted | Use nginx or Caddy as reverse proxy |
+| Local development | HTTP is acceptable |
+
+> **⚠️ Do NOT expose intmax402 endpoints over plain HTTP in production.**
+> An active MITM attacker on HTTP can intercept and replay Authorization headers
+> before the server records the txHash as used.
+
+The protocol provides defense-in-depth even under TLS:
+- **txHash uniqueness** — each transfer digest can only be used once (24h TTL)
+- **Nonce expiry** — nonces expire after a short window
+- **IP binding** — optional `bindIp: true` ties nonces to client IP
+
+---
+
 ## Contributing
 
 Pull requests welcome. Please:
