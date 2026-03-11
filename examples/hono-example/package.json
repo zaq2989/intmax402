@@ -10,7 +10,7 @@
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@tanakayuto/intmax402-hono": "workspace:*",
-    "hono": "^4.0.0"
+    "hono": "^4.12.7"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
