@@ -168,8 +168,8 @@ importers:
   packages/client:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: ^0.3.0
-        version: 0.3.1
+        specifier: ^0.3.2
+        version: 0.3.2
       ethers:
         specifier: ^6.0.0
         version: 6.16.0
