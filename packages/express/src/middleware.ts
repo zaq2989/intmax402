@@ -6,6 +6,8 @@ import {
   verifyNonce,
   parseAuthorization,
   buildWWWAuthenticate,
+  INTMAX402_ERROR_CODES,
+  INTMAX402Error,
 } from "@tanakayuto/intmax402-core";
 import { verifySignature } from "./crypto";
 import { initPaymentVerifier, verifyPayment } from "./verify-payment";
@@ -45,7 +47,7 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
       } catch (e) {
         res.status(503).json({
           error: 'Payment verifier temporarily unavailable',
-          hint: 'INTMAX network may be experiencing issues. Please try again later.',
+          error_code: INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE,
           protocol: 'INTMAX402',
         });
         return;
@@ -59,6 +61,7 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
         res.setHeader("WWW-Authenticate", buildWWWAuthenticate(nonce, config));
         res.status(statusCode).json({
           error: config.mode === "payment" ? "Payment Required" : "Unauthorized",
+          error_code: INTMAX402_ERROR_CODES.MISSING_AUTH_HEADER,
           protocol: "INTMAX402",
           mode: config.mode,
         });
@@ -106,14 +109,32 @@ export function intmax402(config: INTMAX402Config): RequestHandler {
           return;
         }
 
-        const paymentResult = await verifyPayment(
-          credential.txHash,
-          config.amount,
-          config.serverAddress
-        );
+        let paymentResult: Awaited<ReturnType<typeof verifyPayment>>;
+        try {
+          paymentResult = await verifyPayment(
+            credential.txHash,
+            config.amount,
+            config.serverAddress
+          );
+        } catch (err) {
+          if (err instanceof INTMAX402Error) {
+            const status = err.code === INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE ? 503 : 402;
+            res.status(status).json({
+              error: err.message,
+              error_code: err.code,
+              protocol: 'INTMAX402',
+            });
+          } else {
+            res.status(402).json({
+              error: 'Payment verification failed',
+              protocol: 'INTMAX402',
+            });
+          }
+          return;
+        }
 
         if (!paymentResult.valid) {
-          res.status(402).json({ error: paymentResult.error || "Payment verification failed" });
+          res.status(402).json({ error: paymentResult.error || "Payment verification failed", protocol: "INTMAX402" });
           return;
         }
       }

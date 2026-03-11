@@ -196,8 +196,8 @@ importers:
   packages/express:
     dependencies:
       '@tanakayuto/intmax402-core':
-        specifier: 0.3.1
-        version: 0.3.1
+        specifier: 0.3.2
+        version: 0.3.2
       ethers:
         specifier: ^6.16.0
         version: 6.16.0
@@ -392,6 +392,9 @@ packages:
 
   '@tanakayuto/intmax402-core@0.3.1':
     resolution: {integrity: sha512-ICBRzeMeHYGCFw5rlzD6TEnuLymcc+Q0akjxQat4etO1OPJpovJbc+1YQgTO0FcHW85KmLAE2vYfmEkg+kqFZA==}
+
+  '@tanakayuto/intmax402-core@0.3.2':
+    resolution: {integrity: sha512-eeKE4PsOuYtYICa0ZUE0wLhD8GF/sfLrz5vdCPo2wmifUzz+ztWnBeXsJuOe9vFJz6hKdHlOQY/tnjuu1+OCDQ==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -1034,6 +1037,8 @@ snapshots:
       tslib: 2.7.0
 
   '@tanakayuto/intmax402-core@0.3.1': {}
+
+  '@tanakayuto/intmax402-core@0.3.2': {}
 
   '@types/body-parser@1.19.6':
     dependencies:

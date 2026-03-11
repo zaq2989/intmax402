@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-express",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -26,7 +26,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanakayuto/intmax402-core": "0.3.1",
+    "@tanakayuto/intmax402-core": "0.3.2",
     "ethers": "^6.16.0",
     "intmax2-server-sdk": "^1.5.2"
   },
