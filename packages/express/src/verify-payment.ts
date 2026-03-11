@@ -52,9 +52,21 @@ export async function initPaymentVerifier(
     loggerLevel: "warn",
   });
 
-  loginPromise = client.login().then(() => {
-    loginPromise = null;
-  });
+  loginPromise = client
+    .login()
+    .then(() => {
+      loginPromise = null;
+    })
+    .catch((err) => {
+      console.warn(
+        "[intmax402] INTMAX network login failed — payment verifier unavailable:",
+        err instanceof Error ? err.message : String(err)
+      );
+      client = null;
+      loginPromise = null;
+      throw err;
+    });
+
   await loginPromise;
 }
 
@@ -70,7 +82,10 @@ export async function verifyPayment(
   tokenIndex?: number
 ): Promise<VerifyPaymentResult> {
   if (!client || !client.isLoggedIn) {
-    return { valid: false, error: "Payment verifier not initialized" };
+    return {
+      valid: false,
+      error: "Payment verifier temporarily unavailable. INTMAX network may be down.",
+    };
   }
 
   // Replay prevention: check if txHash was already used (or pending)
@@ -94,7 +109,26 @@ export async function verifyPayment(
     }
 
     // Find matching transaction by digest
-    const match = transfers.find((tx) => tx.digest === txHash);
+    let match = transfers.find((tx) => tx.digest === txHash);
+
+    // Polling retry: if not found, retry up to 3 times with 5s delay
+    // (transfer may not be reflected immediately after submission)
+    if (!match) {
+      for (let retry = 0; retry < 3; retry++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        const retryResponse = await client.fetchTransfers({ cursor: null, limit: 100 });
+        match = retryResponse.items.find((tx) => tx.digest === txHash);
+        if (match) break;
+
+        // Also check next page on retry if needed
+        if (!match && retryResponse.pagination?.has_more && retryResponse.pagination?.next_cursor != null) {
+          const retryResponse2 = await client.fetchTransfers({ cursor: retryResponse.pagination.next_cursor as any, limit: 100 });
+          match = retryResponse2.items.find((tx) => tx.digest === txHash);
+          if (match) break;
+        }
+      }
+    }
+
     if (!match) {
       // Fix 1: Rollback on validation failure
       usedTxHashes.delete(txHash);
