@@ -1,5 +1,5 @@
 import { handleIntmax402 } from "@tanakayuto/intmax402-fetch"
-import { INTMAX402Config } from "@tanakayuto/intmax402-core"
+import { INTMAX402Config, INTMAX402Error } from "@tanakayuto/intmax402-core"
 import { MiddlewareHandler } from "hono"
 
 export type Intmax402Env = {
@@ -22,6 +22,9 @@ export function intmax402(config: INTMAX402Config): MiddlewareHandler<Intmax402E
       c.set("intmax402", result.context!)
       await next()
     } catch (err) {
+      if (err instanceof INTMAX402Error) {
+        return c.json({ error: err.message, code: err.code }, 500)
+      }
       return c.json({ error: "Internal Server Error" }, 500)
     }
   }

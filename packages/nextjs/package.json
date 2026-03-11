@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-nextjs",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "INTMAX402 middleware for Next.js App Router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,7 @@
     "next": ">=14.0.0"
   },
   "dependencies": {
-    "@tanakayuto/intmax402-core": "^0.3.0",
+    "@tanakayuto/intmax402-core": "^0.3.2",
     "@tanakayuto/intmax402-fetch": "workspace:*",
     "ethers": "^6.0.0"
   },

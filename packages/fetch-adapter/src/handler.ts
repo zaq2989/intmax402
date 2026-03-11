@@ -1,4 +1,4 @@
-import { generateNonce, verifyNonce, parseAuthorization, INTMAX402Config, buildWWWAuthenticate } from "@tanakayuto/intmax402-core"
+import { generateNonce, verifyNonce, parseAuthorization, INTMAX402Config, buildWWWAuthenticate, INTMAX402Error, INTMAX402_ERROR_CODES } from "@tanakayuto/intmax402-core"
 import { verifySignature } from "@tanakayuto/intmax402-express/crypto"
 import { initPaymentVerifier, verifyPayment } from "@tanakayuto/intmax402-express/verify-payment"
 
@@ -64,11 +64,11 @@ export async function handleIntmax402(
 
     const credential = parseAuthorization(authHeader)
     if (!credential) {
-      return { response: errorResponse(401, "Invalid authorization header"), context: null }
+      throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_AUTH_FORMAT, "Invalid authorization header")
     }
 
     if (!verifyNonce(credential.nonce, config.secret, ip, url.pathname, config.bindIp ?? false)) {
-      return { response: errorResponse(401, "Invalid or expired nonce"), context: null }
+      throw new INTMAX402Error(INTMAX402_ERROR_CODES.NONCE_EXPIRED, "Invalid or expired nonce")
     }
 
     if (config.allowList && config.allowList.length > 0) {
@@ -80,19 +80,19 @@ export async function handleIntmax402(
 
     const isValidSig = verifySignature(credential.signature, credential.nonce, credential.address)
     if (!isValidSig) {
-      return { response: errorResponse(401, "Invalid signature"), context: null }
+      throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_SIGNATURE, "Invalid signature")
     }
 
     if (config.mode === "payment") {
       if (!credential.txHash) {
-        return { response: errorResponse(402, "Payment transaction hash required"), context: null }
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND, "Payment transaction hash required")
       }
       if (!config.serverAddress || !config.amount) {
-        return { response: errorResponse(500, "Server misconfigured"), context: null }
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_CONFIG, "Server misconfigured")
       }
       const paymentResult = await verifyPayment(credential.txHash, config.amount, config.serverAddress)
       if (!paymentResult.valid) {
-        return { response: errorResponse(402, paymentResult.error ?? "Payment verification failed"), context: null }
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND, paymentResult.error ?? "Payment verification failed")
       }
     }
 
@@ -101,11 +101,38 @@ export async function handleIntmax402(
       context: { address: credential.address, verified: true, txHash: credential.txHash },
     }
   } catch (err) {
+    if (err instanceof INTMAX402Error) {
+      const status = statusFromCode(err.code)
+      return { response: errorResponse(status, err.message), context: null }
+    }
     // URL parse error or unexpected error
     return {
       response: errorResponse(400, "Bad Request"),
       context: null,
     }
+  }
+}
+
+function statusFromCode(code: string): number {
+  switch (code) {
+    case INTMAX402_ERROR_CODES.MISSING_AUTH_HEADER:
+    case INTMAX402_ERROR_CODES.INVALID_AUTH_FORMAT:
+    case INTMAX402_ERROR_CODES.NONCE_EXPIRED:
+    case INTMAX402_ERROR_CODES.NONCE_ALREADY_USED:
+    case INTMAX402_ERROR_CODES.INVALID_SIGNATURE:
+      return 401
+    case INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND:
+    case INTMAX402_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH:
+    case INTMAX402_ERROR_CODES.PAYMENT_RECIPIENT_MISMATCH:
+      return 402
+    case INTMAX402_ERROR_CODES.INVALID_CONFIG:
+    case INTMAX402_ERROR_CODES.MISSING_PRIVATE_KEY:
+    case INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE:
+    case INTMAX402_ERROR_CODES.INTMAX_SYNC_TIMEOUT:
+    case INTMAX402_ERROR_CODES.INTMAX_BROADCAST_FAILED:
+      return 500
+    default:
+      return 400
   }
 }
 

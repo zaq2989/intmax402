@@ -1,5 +1,5 @@
 import { handleIntmax402 } from "@tanakayuto/intmax402-fetch"
-import { INTMAX402Config, buildWWWAuthenticate } from "@tanakayuto/intmax402-core"
+import { INTMAX402Config, buildWWWAuthenticate, INTMAX402Error, INTMAX402_ERROR_CODES } from "@tanakayuto/intmax402-core"
 import { ethers } from "ethers"
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -228,44 +228,54 @@ export function intmax402Middleware(options: MiddlewareOptions) {
     }
 
     // Verify the authorization header
-    const credential = parseAuthorizationEdge(authHeader)
-    if (!credential) {
-      return edgeError(401, "Invalid authorization header")
-    }
-
-    const nonceValid = await verifyNonceEdge(
-      credential.nonce,
-      config.secret,
-      ip,
-      pathname,
-      config.bindIp ?? false
-    )
-    if (!nonceValid) {
-      return edgeError(401, "Invalid or expired nonce")
-    }
-
-    if (config.allowList && config.allowList.length > 0) {
-      const normalized = config.allowList.map((a) => a.toLowerCase())
-      if (!normalized.includes(credential.address.toLowerCase())) {
-        return edgeError(403, "Address not in allow list")
+    try {
+      const credential = parseAuthorizationEdge(authHeader)
+      if (!credential) {
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_AUTH_FORMAT, "Invalid authorization header")
       }
-    }
 
-    const sigValid = verifySignatureEdge(credential.signature, credential.nonce, credential.address)
-    if (!sigValid) {
-      return edgeError(401, "Invalid signature")
-    }
+      const nonceValid = await verifyNonceEdge(
+        credential.nonce,
+        config.secret,
+        ip,
+        pathname,
+        config.bindIp ?? false
+      )
+      if (!nonceValid) {
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.NONCE_EXPIRED, "Invalid or expired nonce")
+      }
 
-    // For payment mode in middleware, we skip on-chain verification (do it in route handler)
-    // Pass auth info downstream via headers
-    const response = NextResponse.next()
-    response.headers.set("x-intmax402-address", credential.address)
-    response.headers.set("x-intmax402-verified", "true")
-    if (credential.txHash) {
-      response.headers.set("x-intmax402-tx-hash", credential.txHash)
-    }
+      if (config.allowList && config.allowList.length > 0) {
+        const normalized = config.allowList.map((a) => a.toLowerCase())
+        if (!normalized.includes(credential.address.toLowerCase())) {
+          return edgeError(403, "Address not in allow list")
+        }
+      }
 
-    return response
+      const sigValid = verifySignatureEdge(credential.signature, credential.nonce, credential.address)
+      if (!sigValid) {
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_SIGNATURE, "Invalid signature")
+      }
+
+      // For payment mode in middleware, we skip on-chain verification (do it in route handler)
+      // Pass auth info downstream via headers
+      const response = NextResponse.next()
+      response.headers.set("x-intmax402-address", credential.address)
+      response.headers.set("x-intmax402-verified", "true")
+      if (credential.txHash) {
+        response.headers.set("x-intmax402-tx-hash", credential.txHash)
+      }
+
+      return response
+    } catch (err) {
+      if (err instanceof INTMAX402Error) {
+        return new Response(JSON.stringify({ error: err.message, code: err.code }), {
+          status: edgeStatusFromCode(err.code),
+          headers: { "Content-Type": "application/json" },
+        })
+      }
+      return edgeError(500, "Internal Server Error")
+    }
   }
 }
 
@@ -274,6 +284,29 @@ function edgeError(status: number, message: string): Response {
     status,
     headers: { "Content-Type": "application/json" },
   })
+}
+
+function edgeStatusFromCode(code: string): number {
+  switch (code) {
+    case INTMAX402_ERROR_CODES.MISSING_AUTH_HEADER:
+    case INTMAX402_ERROR_CODES.INVALID_AUTH_FORMAT:
+    case INTMAX402_ERROR_CODES.NONCE_EXPIRED:
+    case INTMAX402_ERROR_CODES.NONCE_ALREADY_USED:
+    case INTMAX402_ERROR_CODES.INVALID_SIGNATURE:
+      return 401
+    case INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND:
+    case INTMAX402_ERROR_CODES.PAYMENT_AMOUNT_MISMATCH:
+    case INTMAX402_ERROR_CODES.PAYMENT_RECIPIENT_MISMATCH:
+      return 402
+    case INTMAX402_ERROR_CODES.INVALID_CONFIG:
+    case INTMAX402_ERROR_CODES.MISSING_PRIVATE_KEY:
+    case INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE:
+    case INTMAX402_ERROR_CODES.INTMAX_SYNC_TIMEOUT:
+    case INTMAX402_ERROR_CODES.INTMAX_BROADCAST_FAILED:
+      return 500
+    default:
+      return 400
+  }
 }
 
 /**
