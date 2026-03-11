@@ -131,13 +131,9 @@ Error: validity prover error / connection refused
 
 ### NEW - Discovered during QA
 
-**N1: `sanitize()` が文字 `r` を除去するバグ**
+**N1: `sanitize()` が文字 `r` を除去するバグ** ✅ Resolved
 - File: `packages/core/src/www-authenticate.ts`
-- `/["\\r\n]/g` regex が `r` をリテラル文字として除去している
-- 例: `tokenAddress="0xTokenAddr..."` → `"0xTokenAdd..."` にサニタイズされる
-- **影響**: tokenAddress 等に `r` を含む値が壊れる
-- **回避策**: tokenAddress は hex-only 文字列（0-9, a-f のみ）を使用
-- **修正**: `replace(/["\\r\n]/g, "")` → `replace(/["\\\r\n]/g, "")` が正解
+- 修正済み: `/["\\]|\r|\n/g` で正しく CR/LF のみ除去される
 
 ---
 
