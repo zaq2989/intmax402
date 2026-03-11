@@ -71,7 +71,9 @@ npm install @tanakayuto/intmax402-client
 npm install -g @tanakayuto/intmax402-cli
 ```
 
-### 2a. Server — Identity mode (prove wallet ownership)
+### 2. Server — Identity Mode (5 lines)
+
+Prove wallet ownership — no payment, no blockchain node required.
 
 ```typescript
 import express from 'express'
@@ -79,19 +81,19 @@ import { intmax402 } from '@tanakayuto/intmax402-express'
 
 const app = express()
 
-// Identity mode: prove wallet ownership (no payment)
-app.get('/premium', intmax402({
-  mode: 'identity',
+app.use('/protected', intmax402({
   secret: process.env.INTMAX402_SECRET!,
-  allowList: ['0xYourTrustedAddress'],  // optional
-}), (req, res) => {
+  mode: 'identity',
+}))
+
+app.get('/protected', (req, res) => {
   res.json({ message: 'Access granted', address: req.intmax402?.address })
 })
 
 app.listen(3000)
 ```
 
-### 2b. Server — Payment mode (require INTMAX micropayment)
+### 3. Server — Payment Mode (require INTMAX micropayment)
 
 > **v0.3.1+**: Pass `ethPrivateKey` directly in config — no separate `initPaymentVerifier()` call needed.
 
@@ -101,15 +103,16 @@ import { intmax402 } from '@tanakayuto/intmax402-express'
 
 const app = express()
 
-// Payment mode: require INTMAX L2 transfer before access
 app.use('/api/premium', intmax402({
   mode: 'payment',
   secret: process.env.INTMAX402_SECRET!,
-  serverAddress: process.env.INTMAX_ADDRESS!,  // your INTMAX mainnet address
+  serverAddress: process.env.INTMAX_ADDRESS!,  // your INTMAX L2 address
   amount: '1000000000000000',                   // 0.001 ETH in wei
   environment: 'mainnet',
   ethPrivateKey: process.env.ETH_PRIVATE_KEY!,  // auto-initializes verifier (v0.3.1+)
-}), (req, res) => {
+}))
+
+app.get('/api/premium', (req, res) => {
   res.json({ message: 'Payment verified!', txHash: req.intmax402?.txHash })
 })
 
@@ -120,22 +123,7 @@ app.listen(3000)
 - Deposit ETH to INTMAX L2 at [https://app.intmax.io](https://app.intmax.io) (mainnet) or [https://testnet.intmax.io](https://testnet.intmax.io) (testnet)
 - Your INTMAX L2 address is derived from your Ethereum private key — use `intmax402 keygen` or the SDK to retrieve it
 
-### 3. Client — Auto-authenticate (identity mode)
-
-```typescript
-import { INTMAX402Client } from '@tanakayuto/intmax402-client'
-
-// Defaults to mainnet (Ethereum mainnet + Scroll)
-const client = new INTMAX402Client({ privateKey: process.env.ETH_PRIVATE_KEY! })
-await client.init()
-
-// Automatically handles 401 → sign → retry
-const res = await client.fetch('http://localhost:3000/premium')
-const data = await res.json()
-console.log(data) // { message: 'Access granted', address: '0x...' }
-```
-
-### 3b. Client — Auto-pay (payment mode)
+### 4. Client — Payment Mode
 
 ```typescript
 import { INTMAX402Client } from '@tanakayuto/intmax402-client'
@@ -145,17 +133,53 @@ const client = new INTMAX402Client({
   environment: 'mainnet',
 })
 
-// Initialize INTMAX L2 payment capability
-// Fund your wallet first at https://app.intmax.io (mainnet) or https://testnet.intmax.io (testnet)
-await client.initPayment()
+await client.initPayment() // Initialize INTMAX L2 wallet
 
 // Automatically handles 402 → pay → retry with txHash
-const res = await client.fetch('http://localhost:3000/api/premium')
-const data = await res.json()
-console.log(data) // { message: 'Payment verified!', txHash: '0x...' }
+const response = await client.fetch('https://your-api.com/protected')
+const data = await response.json()
+console.log(data) // { message: 'Payment verified!', txHash: '...' }
 ```
 
-### 4. Test instantly with the CLI
+### 4b. Client — Identity Mode
+
+```typescript
+import { INTMAX402Client } from '@tanakayuto/intmax402-client'
+
+const client = new INTMAX402Client({ privateKey: process.env.ETH_PRIVATE_KEY! })
+await client.init()
+
+// Automatically handles 401 → sign → retry
+const response = await client.fetch('https://your-api.com/protected')
+const data = await response.json()
+console.log(data) // { message: 'Access granted', address: '0x...' }
+```
+
+### 5. Error Handling
+
+```typescript
+import { INTMAX402Error, INTMAX402_ERROR_CODES } from '@tanakayuto/intmax402-core'
+
+try {
+  const response = await client.fetch(url)
+} catch (e) {
+  if (e instanceof INTMAX402Error) {
+    switch (e.code) {
+      case INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE:
+        // INTMAX network is down — retry later
+        break
+      case INTMAX402_ERROR_CODES.PAYMENT_NOT_FOUND:
+        // Payment verification failed
+        break
+      case INTMAX402_ERROR_CODES.INTMAX_BROADCAST_FAILED:
+        // Transaction broadcast failed
+        break
+    }
+  }
+}
+```
+
+### 6. Test instantly with the CLI
 
 ```bash
 # Generate a test wallet
@@ -310,7 +334,8 @@ app.get('/exclusive', intmax402({
 | Example | Description |
 |---|---|
 | [`examples/basic-express/`](examples/basic-express/) | Identity mode server — simplest possible setup |
-| [`examples/payment-demo/`](examples/payment-demo/) | Payment mode server + client (mainnet by default, testnet for dev) |
+| [`examples/express-payment/`](examples/express-payment/) | Payment mode: plain JS server + client (quickstart) |
+| [`examples/payment-demo/`](examples/payment-demo/) | Payment mode server + client (TypeScript, mainnet by default) |
 | [`examples/agent-to-agent/`](examples/agent-to-agent/) | AI agent calling AI agent (self-contained demo) |
 | [`examples/hono-example/`](examples/hono-example/) | Hono framework (edge-compatible) |
 
