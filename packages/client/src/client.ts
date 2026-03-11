@@ -64,7 +64,7 @@ export class INTMAX402Client {
   }
 
   getIntMaxAddress(): string {
-    if (!this.intmaxClient) throw new Error("Call initPayment() first");
+    if (!this.intmaxClient) throw new INTMAX402Error(INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE, "Call initPayment() first");
     return this.intmaxClient.address;
   }
 
@@ -82,7 +82,7 @@ export class INTMAX402Client {
     token: Token
   ): Promise<{ txTreeRoot: string; transferDigest: string }> {
     if (!this.intmaxClient) {
-      throw new Error("Call initPayment() before sending payments");
+      throw new INTMAX402Error(INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE, "Call initPayment() before sending payments");
     }
 
     // Sync before sending payment (with timeout, failure is non-fatal)
@@ -152,13 +152,14 @@ export class INTMAX402Client {
     // Payment mode: send payment and include txHash
     if (challenge.mode === "payment") {
       if (!this.intmaxClient) {
-        throw new Error(
+        throw new INTMAX402Error(
+          INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE,
           "Payment required but intmax client not initialized. Call initPayment() first."
         );
       }
 
       if (!challenge.serverAddress || !challenge.amount) {
-        throw new Error("Server did not provide serverAddress or amount in challenge");
+        throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_CONFIG, "Server did not provide serverAddress or amount in challenge");
       }
 
       // Get token list and find matching token
@@ -170,7 +171,7 @@ export class INTMAX402Client {
           (t) => t.contractAddress.toLowerCase() === challenge.tokenAddress!.toLowerCase()
         );
         if (!found) {
-          throw new Error(`Token ${challenge.tokenAddress} not found in token list`);
+          throw new INTMAX402Error(INTMAX402_ERROR_CODES.INVALID_CONFIG, `Token ${challenge.tokenAddress} not found in token list`);
         }
         paymentToken = found;
       } else {
