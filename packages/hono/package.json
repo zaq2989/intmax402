@@ -1,6 +1,6 @@
 {
   "name": "@tanakayuto/intmax402-hono",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -29,12 +29,12 @@
     "ethers": "^6.0.0"
   },
   "peerDependencies": {
-    "hono": "^4.0.0"
+    "hono": "^4.12.7"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/node": "^20.0.0",
-    "hono": "^4.0.0"
+    "hono": "^4.12.7"
   },
   "scripts": {
     "build": "tsc",
