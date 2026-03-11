@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { parseWWWAuthenticate } from "@tanakayuto/intmax402-core";
+import { parseWWWAuthenticate, INTMAX402Error, INTMAX402_ERROR_CODES } from "@tanakayuto/intmax402-core";
 import { IntMaxNodeClient, Token, TokenType } from "intmax2-server-sdk";
 
 const RPC_URLS = {
@@ -22,7 +22,10 @@ export class INTMAX402Client {
   constructor(options: INTMAX402ClientOptions) {
     // Validate private key before creating wallet
     if (!ethers.isHexString(options.privateKey, 32)) {
-      throw new Error("Invalid private key: must be a 32-byte hex string (0x-prefixed)");
+      throw new INTMAX402Error(
+        INTMAX402_ERROR_CODES.MISSING_PRIVATE_KEY,
+        "Invalid private key: must be a 32-byte hex string (0x-prefixed)"
+      );
     }
     this.wallet = new ethers.Wallet(options.privateKey);
     this.environment = options.environment || "mainnet";
@@ -33,14 +36,27 @@ export class INTMAX402Client {
   }
 
   async initPayment(l1RpcUrl?: string): Promise<void> {
-    this.intmaxClient = new IntMaxNodeClient({
-      environment: this.environment,
-      eth_private_key: this.wallet.privateKey as `0x${string}`,
-      l1_rpc_url: l1RpcUrl || RPC_URLS[this.environment],
-      loggerLevel: "warn",
-    });
-    await this.intmaxClient.login();
-    this.initialized = true;
+    try {
+      this.intmaxClient = new IntMaxNodeClient({
+        environment: this.environment,
+        eth_private_key: this.wallet.privateKey as `0x${string}`,
+        l1_rpc_url: l1RpcUrl || RPC_URLS[this.environment],
+        loggerLevel: "warn",
+      });
+      await this.intmaxClient.login();
+      this.initialized = true;
+    } catch (e) {
+      this.intmaxClient = null;
+      throw new INTMAX402Error(
+        INTMAX402_ERROR_CODES.INTMAX_NETWORK_UNAVAILABLE,
+        `initPayment failed: ${(e as Error).message}`,
+        e
+      );
+    }
+  }
+
+  isPaymentInitialized(): boolean {
+    return this.intmaxClient !== null && this.initialized;
   }
 
   getAddress(): string {
@@ -81,9 +97,29 @@ export class INTMAX402Client {
       // sync failed or timed out, continue anyway
     }
 
-    const result = await this.intmaxClient.broadcastTransaction([
-      { address: recipientAddress, amount: amountEth, token },
-    ]);
+    const tryBroadcast = async () => {
+      const result = await this.intmaxClient!.broadcastTransaction([
+        { address: recipientAddress, amount: amountEth, token },
+      ]);
+      return result;
+    };
+
+    let result;
+    try {
+      result = await tryBroadcast();
+    } catch (e) {
+      // retry once after 5 seconds
+      await new Promise((r) => setTimeout(r, 5000));
+      try {
+        result = await tryBroadcast();
+      } catch (e2) {
+        throw new INTMAX402Error(
+          INTMAX402_ERROR_CODES.INTMAX_BROADCAST_FAILED,
+          `broadcastTransaction failed after retry: ${(e2 as Error).message}`,
+          e2
+        );
+      }
+    }
 
     return {
       txTreeRoot: result.txTreeRoot,
