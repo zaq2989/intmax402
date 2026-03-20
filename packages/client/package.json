@@ -11,7 +11,9 @@
   "dependencies": {
     "@tanakayuto/intmax402-core": "^0.3.2",
     "ethers": "^6.0.0",
-    "intmax2-server-sdk": "^1.5.2"
+    "intmax2-server-sdk": "^1.5.2",
+    "viem": "^2.0.0",
+    "x402": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
